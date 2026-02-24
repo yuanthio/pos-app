@@ -1,0 +1,58 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import LoginPage from '@/pages/Login'
+import AdminDashboard from '@/pages/admin/AdminDashboard'
+import KasirDashboard from '@/pages/kasir/KasirDashboard'
+import PelayanDashboard from '@/pages/pelayan/PelayanDashboard'
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/kasir" 
+              element={
+                <ProtectedRoute allowedRoles={['kasir', 'admin']}>
+                  <KasirDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/pelayan" 
+              element={
+                <ProtectedRoute allowedRoles={['pelayan', 'admin']}>
+                  <PelayanDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  )
+}
+
+export default App
