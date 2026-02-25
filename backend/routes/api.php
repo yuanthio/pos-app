@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\MakananController;
+use App\Http\Controllers\Api\PelayanController;
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -18,6 +19,14 @@ Route::get('/menu/categories', [MakananController::class, 'categories']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    
+    // Pelayan routes
+    Route::middleware('pelayan')->group(function () {
+        Route::get('/pelayan/tables', [PelayanController::class, 'getTables']);
+        Route::post('/pelayan/orders', [PelayanController::class, 'createOrder']);
+        Route::get('/pelayan/orders', [PelayanController::class, 'getOrders']);
+        Route::put('/pelayan/tables/{meja}', [PelayanController::class, 'updateTableStatus']);
+    });
     
     // Admin routes
     Route::middleware('admin')->group(function () {
