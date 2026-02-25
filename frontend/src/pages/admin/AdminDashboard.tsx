@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { AdminHeader } from '@/components/admin/AdminHeader'
 import { 
-  AdminHeader, 
   StatsCards, 
   UsersByRoleCard, 
   UserStatusCard, 
@@ -28,10 +28,10 @@ export default function AdminDashboard() {
       if (response.success) {
         setDashboardData(response)
       } else {
-        setError('Failed to load dashboard data')
+        setError('Gagal memuat data dashboard')
       }
     } catch (err) {
-      setError('Error loading dashboard data')
+      setError('Error memuat data dashboard')
       console.error('Dashboard error:', err)
     } finally {
       setLoading(false)
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchDashboardData}>Retry</Button>
+          <Button onClick={fetchDashboardData}>Coba Lagi</Button>
         </div>
       </div>
     )
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   if (!dashboardData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>No dashboard data available</p>
+        <p>Tidak ada data dashboard tersedia</p>
       </div>
     )
   }
