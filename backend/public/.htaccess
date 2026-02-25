@@ -23,3 +23,16 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Allow access to storage files
+<IfModule mod_authz_core.c>
+    <Directory "storage">
+        Require all granted
+    </Directory>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <Directory "storage">
+        Order allow,deny
+        Allow from all
+    </Directory>
+</IfModule>
