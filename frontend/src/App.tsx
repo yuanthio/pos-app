@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import LoginPage from '@/pages/Login'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
+import MakananManagement from '@/pages/admin/MakananManagement'
 import KasirDashboard from '@/pages/kasir/KasirDashboard'
 import PelayanDashboard from '@/pages/pelayan/PelayanDashboard'
 
@@ -21,6 +22,29 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/makanan" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <MakananManagement />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin/users" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold mb-4">Manajemen Pengguna</h1>
+                      <p className="text-gray-600">Segera hadir...</p>
+                    </div>
+                  </div>
                 </ProtectedRoute>
               } 
             />
