@@ -1,0 +1,47 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Utensils } from 'lucide-react'
+import type { Pesanan } from '@/types'
+
+interface RecentOrdersProps {
+  pesanans: Pesanan[]
+}
+
+export default function RecentOrders({ pesanans }: RecentOrdersProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Orders</CardTitle>
+        <CardDescription>Latest order activities</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {pesanans.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Utensils className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <p>No orders yet</p>
+            <p className="text-sm">Start by creating a new order</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pesanans.slice(0, 5).map((pesanan) => (
+              <div key={pesanan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">{pesanan.nama_pelanggan || 'Guest'}</p>
+                  <p className="text-sm text-gray-500">{pesanan.meja?.nomor_meja}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{pesanan.status}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(pesanan.created_at).toLocaleTimeString('id-ID', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
