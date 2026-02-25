@@ -23,8 +23,8 @@ export function RecentUsersCard({ recentUsers }: RecentUsersCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Users</CardTitle>
-        <CardDescription>Latest user registrations</CardDescription>
+        <CardTitle>Pengguna Terbaru</CardTitle>
+        <CardDescription>Pendaftaran pengguna terbaru</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -49,7 +49,7 @@ export function RecentUsersCard({ recentUsers }: RecentUsersCardProps) {
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? 'Aktif' : 'Tidak Aktif'}
                   </span>
                 </div>
               </div>
@@ -57,7 +57,7 @@ export function RecentUsersCard({ recentUsers }: RecentUsersCardProps) {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Users className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <p>No recent users</p>
+              <p>Tidak ada pengguna terbaru</p>
             </div>
           )}
         </div>

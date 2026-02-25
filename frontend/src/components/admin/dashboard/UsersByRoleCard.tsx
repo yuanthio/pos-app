@@ -12,8 +12,8 @@ export function UsersByRoleCard({ usersByRole }: UsersByRoleCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Users by Role</CardTitle>
-        <CardDescription>Distribution of users by role</CardDescription>
+        <CardTitle>Pengguna Berdasarkan Peran</CardTitle>
+        <CardDescription>Distribusi pengguna berdasarkan peran</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
