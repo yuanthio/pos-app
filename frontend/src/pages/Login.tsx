@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError('')
 
     if (!email || !password) {
-      setError('Please fill in all fields')
+      setError('Harap isi semua field')
       return
     }
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
         setError(result.message)
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.')
+      setError('Terjadi kesalahan yang tidak terduga. Silakan coba lagi.')
     }
   }
 
@@ -58,10 +58,10 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Welcome Back
+            Selamat Datang
           </CardTitle>
           <CardDescription className="text-gray-600">
-            Sign in to your Point of Sale account
+            Masuk ke akun Point of Sale Anda
           </CardDescription>
         </CardHeader>
         
@@ -82,7 +82,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder="nama@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder="Masukkan kata sandi Anda"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
@@ -128,14 +128,14 @@ export default function LoginPage() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-600">
-                  Remember me
+                  Ingat saya
                 </Label>
               </div>
               <a
                 href="#"
                 className="text-sm text-blue-600 hover:text-blue-500 font-medium"
               >
-                Forgot password?
+                Lupa kata sandi?
               </a>
             </div>
 
@@ -144,18 +144,18 @@ export default function LoginPage() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Sedang masuk...' : 'Masuk'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Belum punya akun?{' '}
               <a
                 href="#"
                 className="text-blue-600 hover:text-blue-500 font-medium"
               >
-                Sign up now
+                Daftar sekarang
               </a>
             </p>
           </div>
