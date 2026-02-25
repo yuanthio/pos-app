@@ -16,7 +16,14 @@ class AdminMiddleware
     {
         $user = $request->user();
         
-        if (!$user || $user->role !== 'admin') {
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated. Please login.'
+            ], 401);
+        }
+        
+        if ($user->role !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Admin access required.'
