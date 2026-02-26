@@ -24,7 +24,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('pelayan')->group(function () {
         Route::get('/pelayan/tables', [PelayanController::class, 'getTables']);
         Route::post('/pelayan/orders', [PelayanController::class, 'createOrder']);
+        Route::put('/pelayan/tables/{meja}/book', [PelayanController::class, 'bookTable']);
         Route::get('/pelayan/orders', [PelayanController::class, 'getOrders']);
+        Route::get('/pelayan/orders/{pesanan}', [PelayanController::class, 'getOrderDetail']);
+        Route::delete('/pelayan/orders/{pesanan}', [PelayanController::class, 'deleteOrder']);
+        Route::post('/pelayan/orders/{pesanan}/items', [PelayanController::class, 'addItemToOrder']);
+        Route::put('/pelayan/orders/{pesanan}/items/{detailPesanan}', [PelayanController::class, 'updateItemQuantity']);
+        Route::delete('/pelayan/orders/{pesanan}/items/{detailPesanan}', [PelayanController::class, 'removeItemFromOrder']);
         Route::put('/pelayan/tables/{meja}', [PelayanController::class, 'updateTableStatus']);
     });
     
