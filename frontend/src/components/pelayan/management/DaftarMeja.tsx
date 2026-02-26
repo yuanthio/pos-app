@@ -5,6 +5,7 @@ import type { AppDispatch, RootState } from '@/store'
 import { fetchMejas, updateTableStatus, clearError } from '@/store/mejaSlice'
 import type { Meja } from '@/types'
 import { toast } from 'sonner'
+import { Progress } from '@/components/ui/progress'
 import MejaStats from './MejaStats'
 import MejaFilters from './MejaFilters'
 import MejaGrid from './MejaGrid'
@@ -71,7 +72,7 @@ export default function DaftarMeja() {
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-1">
           <h2 className="text-2xl font-bold mb-4">Daftar Meja</h2>
-          <MejaStats statusCount={statusCount} totalMeja={totalMeja} />
+          <MejaStats statusCount={statusCount} />
         </div>
 
         <div className="lg:w-64">
@@ -92,12 +93,16 @@ export default function DaftarMeja() {
                 <span className="text-sm text-gray-600">Terisi:</span>
                 <span className="font-semibold text-red-600">{statusCount.terisi}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${totalMeja > 0 ? (statusCount.tersedia / totalMeja) * 100 : 0}%` }}
-                ></div>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm text-gray-600">Ketersediaan:</span>
+                <span className="text-sm font-medium">
+                  {totalMeja > 0 ? ((statusCount.tersedia / totalMeja) * 100).toFixed(1) : 0}%
+                </span>
               </div>
+              <Progress 
+                value={totalMeja > 0 ? (statusCount.tersedia / totalMeja) * 100 : 0} 
+                className="h-2 flex-1" 
+              />
             </CardContent>
           </Card>
         </div>

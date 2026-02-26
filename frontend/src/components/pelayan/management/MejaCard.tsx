@@ -2,11 +2,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Meja } from '@/types'
-import { Users, Clock, CheckCircle, XCircle, Plus } from 'lucide-react'
+import { Users, Clock, CheckCircle, XCircle, Plus, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import type { AppDispatch } from '@/store'
-import { createOrder } from '@/store/mejaSlice'
+import { createOrder, bookTable } from '@/store/mejaSlice'
 import { toast } from 'sonner'
 
 interface MejaCardProps {
@@ -18,9 +18,13 @@ interface MejaCardProps {
 export default function MejaCard({ meja, onCreateOrder, onUpdateStatus }: MejaCardProps) {
   const dispatch = useDispatch<AppDispatch>()
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+  const [isBooking, setIsBooking] = useState(false)
   const [showOrderForm, setShowOrderForm] = useState(false)
+  const [showBookingForm, setShowBookingForm] = useState(false)
   const [customerName, setCustomerName] = useState('')
+  const [bookingName, setBookingName] = useState('')
   const [notes, setNotes] = useState('')
+  const [bookingNotes, setBookingNotes] = useState('')
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -93,6 +97,31 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus }: MejaCa
     }
   }
 
+  const handleBookTable = async () => {
+    if (!bookingName.trim()) {
+      toast.error('Nama pelanggan harus diisi')
+      return
+    }
+
+    setIsBooking(true)
+    try {
+      await dispatch(bookTable({
+        mejaId: meja.id,
+        namaPelanggan: bookingName,
+        catatan: bookingNotes || undefined
+      })).unwrap()
+      
+      toast.success('Meja berhasil di-booking!')
+      setShowBookingForm(false)
+      setBookingName('')
+      setBookingNotes('')
+    } catch (error: any) {
+      toast.error(error || 'Gagal booking meja')
+    } finally {
+      setIsBooking(false)
+    }
+  }
+
   const isAvailable = meja.status === 'tersedia'
 
   return (
@@ -121,15 +150,26 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus }: MejaCa
           </div>
         )}
 
-        {isAvailable && !showOrderForm && (
-          <Button 
-            onClick={() => setShowOrderForm(true)}
-            className="w-full"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Buat Pesanan
-          </Button>
+        {isAvailable && !showOrderForm && !showBookingForm && (
+          <div className="space-y-2">
+            <Button 
+              onClick={() => setShowBookingForm(true)}
+              variant="outline"
+              className="w-full"
+              size="sm"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Booking Meja
+            </Button>
+            <Button 
+              onClick={() => setShowOrderForm(true)}
+              className="w-full"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Buat Pesanan Langsung
+            </Button>
+          </div>
         )}
 
         {showOrderForm && (
@@ -174,6 +214,58 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus }: MejaCa
                   setShowOrderForm(false)
                   setCustomerName('')
                   setNotes('')
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Batal
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showBookingForm && (
+          <div className="space-y-3 border-t pt-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Nama Pelanggan *
+              </label>
+              <input
+                type="text"
+                value={bookingName}
+                onChange={(e) => setBookingName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Masukkan nama pelanggan"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Catatan Booking (opsional)
+              </label>
+              <textarea
+                value={bookingNotes}
+                onChange={(e) => setBookingNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={2}
+                placeholder="Contoh: Jam 19:00, 4 orang, dll."
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBookTable}
+                disabled={isBooking || !bookingName.trim()}
+                className="flex-1"
+                size="sm"
+              >
+                {isBooking ? 'Memboking...' : 'Konfirmasi Booking'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowBookingForm(false)
+                  setBookingName('')
+                  setBookingNotes('')
                 }}
                 variant="outline"
                 size="sm"
