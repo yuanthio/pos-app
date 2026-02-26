@@ -21,8 +21,10 @@ class DetailPesanan extends Model
 
     protected $casts = [
         'jumlah' => 'integer',
-        'harga_satuan' => 'decimal:2',
-        'subtotal' => 'decimal:2'
+        'harga_satuan' => 'float',
+        'subtotal' => 'float',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     /**
@@ -46,7 +48,7 @@ class DetailPesanan extends Model
      */
     public function calculateSubtotal(): void
     {
-        $this->subtotal = $this->jumlah * $this->harga_satuan;
+        $this->subtotal = (float) ($this->jumlah * $this->harga_satuan);
         $this->save();
     }
 
@@ -57,17 +59,7 @@ class DetailPesanan extends Model
     {
         parent::boot();
 
-        // Update pesanan total when detail pesanan is created, updated, or deleted
-        static::created(function ($detailPesanan) {
-            $detailPesanan->pesanan->updateTotalHarga();
-        });
-
-        static::updated(function ($detailPesanan) {
-            $detailPesanan->pesanan->updateTotalHarga();
-        });
-
-        static::deleted(function ($detailPesanan) {
-            $detailPesanan->pesanan->updateTotalHarga();
-        });
+        // Tidak ada event listeners untuk menghindari infinite loop
+        // Total harga akan diupdate manual di controller
     }
 }

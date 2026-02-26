@@ -21,7 +21,9 @@ class Pesanan extends Model
     ];
 
     protected $casts = [
-        'total_harga' => 'decimal:2'
+        'total_harga' => 'float',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     /**
@@ -70,11 +72,31 @@ class Pesanan extends Model
     }
 
     /**
+     * Check if pesanan can be completed
+     */
+    public function canBeCompleted(): bool
+    {
+        $allowedStatuses = ['menunggu', 'diproses'];
+        $statusAllowed = in_array($this->status, $allowedStatuses);
+        $hasItems = $this->detailPesanans()->count() > 0;
+        
+        return $statusAllowed && $hasItems;
+    }
+
+    /**
+     * Check if pesanan can be cancelled
+     */
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, ['menunggu', 'diproses']);
+    }
+
+    /**
      * Calculate and update total harga
      */
     public function updateTotalHarga(): void
     {
-        $this->total_harga = $this->detailPesanans()->sum('subtotal');
+        $this->total_harga = (float) $this->detailPesanans()->sum('subtotal');
         $this->save();
     }
 
@@ -85,12 +107,7 @@ class Pesanan extends Model
     {
         parent::boot();
 
-        // Update total when detail pesanan is changed
-        static::updated(function ($pesanan) {
-            if ($pesanan->wasChanged(['status']) && $pesanan->status === 'selesai') {
-                // Final calculation when order is completed
-                $pesanan->updateTotalHarga();
-            }
-        });
+        // Tidak ada event listeners untuk menghindari infinite loop
+        // Total harga akan diupdate manual di controller
     }
 }
