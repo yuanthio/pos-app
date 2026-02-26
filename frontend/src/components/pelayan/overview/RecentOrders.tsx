@@ -10,23 +10,23 @@ export default function RecentOrders({ pesanans }: RecentOrdersProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Orders</CardTitle>
-        <CardDescription>Latest order activities</CardDescription>
+        <CardTitle>Pesanan Terbaru</CardTitle>
+        <CardDescription>Aktivitas pesanan terkini</CardDescription>
       </CardHeader>
       <CardContent>
         {pesanans.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Utensils className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-            <p>No orders yet</p>
-            <p className="text-sm">Start by creating a new order</p>
+            <p>Belum ada pesanan</p>
+            <p className="text-sm">Mulai dengan membuat pesanan baru</p>
           </div>
         ) : (
           <div className="space-y-3">
             {pesanans.slice(0, 5).map((pesanan) => (
               <div key={pesanan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
-                  <p className="font-medium">{pesanan.nama_pelanggan || 'Guest'}</p>
-                  <p className="text-sm text-gray-500">{pesanan.meja?.nomor_meja}</p>
+                  <p className="font-medium">{pesanan.nama_pelanggan || 'Tamu'}</p>
+                  <p className="text-sm text-gray-500">Meja {pesanan.meja?.nomor_meja}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">{pesanan.status}</p>
