@@ -22,19 +22,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedToken = localStorage.getItem('auth_token')
     const storedUser = localStorage.getItem('user_data')
 
+    console.log('Checking auth...', { storedToken: !!storedToken, storedUser: !!storedUser })
+
     if (storedToken && storedUser) {
       try {
         // Verify token is still valid by fetching user data
+        console.log('Verifying token with API...')
         const response = await authAPI.getUser()
+        console.log('API response:', response)
+        
         if (response.success) {
           setUser(response.data.user)
           setToken(storedToken)
+          console.log('Auth successful')
         } else {
+          console.log('Token invalid, clearing storage')
           // Token invalid, clear storage
           localStorage.removeItem('auth_token')
           localStorage.removeItem('user_data')
         }
       } catch (error) {
+        console.log('Auth check failed:', error)
         // Token invalid or network error, clear storage
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user_data')
