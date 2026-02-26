@@ -290,7 +290,7 @@ class PelayanController extends Controller
     private function updateOrderTotal(Pesanan $pesanan): void
     {
         $total = $pesanan->detailPesanans()->sum('subtotal');
-        $pesanan->update(['total_harga' => $total]);
+        $pesanan->update(['total_harga' => (float) $total]);
     }
 
     /**
@@ -422,6 +422,114 @@ class PelayanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus item: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Complete order (menyelesaikan pesanan)
+     */
+    public function completeOrder(Pesanan $pesanan): JsonResponse
+    {
+        // Check if pesanan belongs to authenticated user
+        if ($pesanan->user_id !== request()->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this order'
+            ], 403);
+        }
+
+        // Check if order can be completed
+        if (!$pesanan->canBeCompleted()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak dapat diselesaikan karena status: ' . $pesanan->status_label
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update order status to selesai
+            $pesanan->update(['status' => 'selesai']);
+
+            // Update table status to tersedia
+            $meja = $pesanan->meja;
+            if ($meja) {
+                $meja->update(['status' => 'tersedia']);
+            }
+
+            // Final calculation of total
+            $this->updateOrderTotal($pesanan);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pesanan->fresh()->load(['meja', 'user', 'detailPesanans.makanan']),
+                'message' => 'Pesanan berhasil diselesaikan'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyelesaikan pesanan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel order (membatalkan pesanan)
+     */
+    public function cancelOrder(Request $request, Pesanan $pesanan): JsonResponse
+    {
+        // Check if pesanan belongs to authenticated user
+        if ($pesanan->user_id !== request()->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this order'
+            ], 403);
+        }
+
+        // Check if order can be cancelled
+        if (!$pesanan->canBeCancelled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak dapat dibatalkan karena status: ' . $pesanan->status_label
+            ], 400);
+        }
+
+        $request->validate([
+            'alasan' => 'nullable|string|max:255'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update order status to dibatalkan
+            $pesanan->update([
+                'status' => 'dibatalkan',
+                'catatan' => $pesanan->catatan . ($request->alasan ? "\n\nAlasan pembatalan: " . $request->alasan : "")
+            ]);
+
+            // Update table status to tersedia
+            $meja = $pesanan->meja;
+            if ($meja) {
+                $meja->update(['status' => 'tersedia']);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pesanan->fresh()->load(['meja', 'user', 'detailPesanans.makanan']),
+                'message' => 'Pesanan berhasil dibatalkan'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan pesanan: ' . $e->getMessage()
             ], 500);
         }
     }
