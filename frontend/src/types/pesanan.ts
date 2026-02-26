@@ -83,6 +83,16 @@ export interface RemoveItemResponse {
   message: string
 }
 
+export interface CancelOrderRequest {
+  alasan?: string
+}
+
+export interface OrderActionResponse {
+  success: boolean
+  data: Pesanan
+  message: string
+}
+
 export interface PesananState {
   orders: Pesanan[]
   currentOrder: Pesanan | null
