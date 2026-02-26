@@ -21,7 +21,7 @@ import AddItemModal from './AddItemModal'
 import OrderDetailHeader from './OrderDetailHeader'
 import OrderSummaryCard from './OrderSummaryCard'
 import OrderItemsSection from './OrderItemsSection'
-import OrderSummary from './OrderSummary'
+import { OrderActions } from './OrderActions'
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>()
@@ -214,12 +214,10 @@ export default function OrderDetail() {
       {/* Header */}
       <OrderDetailHeader
         currentOrder={currentOrder!}
-        canModifyOrder={canModifyOrder}
         onBack={() => {
           console.log('Navigating back to /pelayan/orders')
           navigate('/pelayan/orders')
         }}
-        onAddItem={() => setIsAddModalOpen(true)}
       />
 
       {/* Main Content */}
@@ -242,10 +240,13 @@ export default function OrderDetail() {
             />
           </div>
 
-          {/* Right Column - Summary */}
+          {/* Right Column - Actions */}
           <div className="space-y-6">
-            {/* Summary Card */}
-            <OrderSummary currentOrder={currentOrder!} />
+            {/* Order Actions */}
+            <OrderActions 
+              order={currentOrder!}
+              onAddItem={() => setIsAddModalOpen(true)}
+            />
           </div>
         </div>
       </div>
