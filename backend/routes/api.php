@@ -31,6 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pelayan/orders/{pesanan}/items', [PelayanController::class, 'addItemToOrder']);
         Route::put('/pelayan/orders/{pesanan}/items/{detailPesanan}', [PelayanController::class, 'updateItemQuantity']);
         Route::delete('/pelayan/orders/{pesanan}/items/{detailPesanan}', [PelayanController::class, 'removeItemFromOrder']);
+        Route::post('/pelayan/orders/{pesanan}/complete', [PelayanController::class, 'completeOrder']);
+        Route::post('/pelayan/orders/{pesanan}/cancel', [PelayanController::class, 'cancelOrder']);
         Route::put('/pelayan/tables/{meja}', [PelayanController::class, 'updateTableStatus']);
     });
     
