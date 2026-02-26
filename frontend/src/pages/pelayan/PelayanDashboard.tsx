@@ -1,8 +1,10 @@
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { useAuthUtils } from '@/hooks/useAuth'
 import { useDispatch, useSelector } from 'react-redux'
+import { useParams, useNavigate } from 'react-router-dom'
 import type { AppDispatch, RootState } from '@/store'
-import { fetchMejas, fetchPesanans } from '@/store/mejaSlice'
+import { fetchMejas, markOrdersAsRead } from '@/store/mejaSlice'
+import { fetchOrders } from '@/store/pesananSlice'
 import { useEffect, useState } from 'react'
 import { DaftarMeja } from '@/components/pelayan/management'
 import { OverviewContent } from '@/components/pelayan/overview'
@@ -12,14 +14,26 @@ import PelayanTabs from '@/components/pelayan/PelayanTabs'
 
 export default function PelayanDashboard() {
   const { logout } = useAuthUtils()
+  const { tab: urlTab } = useParams<{ tab?: string }>()
+  const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
-  const { statusCount, pesanans } = useSelector((state: RootState) => state.meja)
-  const [activeTab, setActiveTab] = useState<'overview' | 'tables' | 'orders'>('overview')
+  const { statusCount } = useSelector((state: RootState) => state.meja)
+  const { orders } = useSelector((state: RootState) => state.pesanan)
+  
+  // Set active tab based on URL parameter, default to 'overview'
+  const [activeTab, setActiveTab] = useState<'overview' | 'tables' | 'orders'>(
+    urlTab as 'overview' | 'tables' | 'orders' || 'overview'
+  )
+
+  // Debug: Log activeTab changes
+  useEffect(() => {
+    console.log('activeTab changed to:', activeTab)
+  }, [activeTab])
 
   useEffect(() => {
     // Fetch initial data
     dispatch(fetchMejas())
-    dispatch(fetchPesanans())
+    dispatch(fetchOrders())
   }, [dispatch])
 
   const handleLogout = async () => {
@@ -27,8 +41,18 @@ export default function PelayanDashboard() {
     window.location.href = '/login'
   }
 
-  const handleNavigateToTab = (tab: 'tables' | 'orders') => {
+  const handleNavigateToTab = (tab: 'overview' | 'tables' | 'orders') => {
+    console.log('handleNavigateToTab called with:', tab)
     setActiveTab(tab)
+    
+    // Update URL to reflect the active tab
+    navigate(`/pelayan/${tab}`)
+    
+    // Reset unread orders count when opening orders tab
+    if (tab === 'orders') {
+      console.log('Calling markOrdersAsRead for orders tab')
+      dispatch(markOrdersAsRead())
+    }
   }
 
   return (
@@ -37,7 +61,7 @@ export default function PelayanDashboard() {
       <PelayanHeader onLogout={handleLogout} />
 
       {/* Tab Navigation */}
-      <PelayanTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <PelayanTabs activeTab={activeTab} onTabChange={handleNavigateToTab} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -45,7 +69,7 @@ export default function PelayanDashboard() {
           <TabsContent value="overview">
             <OverviewContent 
               statusCount={statusCount}
-              pesanans={pesanans}
+              pesanans={orders}
               onNavigateToTab={handleNavigateToTab}
             />
           </TabsContent>
@@ -55,7 +79,7 @@ export default function PelayanDashboard() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <OrdersContent pesanans={pesanans} />
+            <OrdersContent pesanans={orders} />
           </TabsContent>
         </Tabs>
       </main>
