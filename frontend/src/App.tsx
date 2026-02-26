@@ -6,6 +6,7 @@ import AdminDashboard from '@/pages/admin/AdminDashboard'
 import MakananManagement from '@/pages/admin/MakananManagement'
 import KasirDashboard from '@/pages/kasir/KasirDashboard'
 import PelayanDashboard from '@/pages/pelayan/PelayanDashboard'
+import OrderDetail from '@/components/pelayan/orders/order_detail/OrderDetail'
 
 function App() {
   return (
@@ -63,6 +64,24 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['pelayan', 'admin']}>
                   <PelayanDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/pelayan/:tab" 
+              element={
+                <ProtectedRoute allowedRoles={['pelayan', 'admin']}>
+                  <PelayanDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/pelayan/orders/:id" 
+              element={
+                <ProtectedRoute allowedRoles={['pelayan', 'admin']}>
+                  <OrderDetail />
                 </ProtectedRoute>
               } 
             />
