@@ -167,4 +167,21 @@ export const makananAPI = {
   },
 }
 
+export const menuAPI = {
+  getAll: async (params?: MakananParams): Promise<MakananResponse> => {
+    const response = await api.get('/menu', { params })
+    return response.data
+  },
+
+  get: async (id: number): Promise<SingleMakananResponse> => {
+    const response = await api.get(`/menu/${id}`)
+    return response.data
+  },
+
+  getCategories: async (): Promise<CategoriesResponse> => {
+    const response = await api.get('/menu/categories')
+    return response.data
+  },
+}
+
 export default api
