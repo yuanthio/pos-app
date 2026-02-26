@@ -68,4 +68,29 @@ class Pesanan extends Model
     {
         return in_array($this->status, ['menunggu', 'diproses']);
     }
+
+    /**
+     * Calculate and update total harga
+     */
+    public function updateTotalHarga(): void
+    {
+        $this->total_harga = $this->detailPesanans()->sum('subtotal');
+        $this->save();
+    }
+
+    /**
+     * Boot method to handle events
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Update total when detail pesanan is changed
+        static::updated(function ($pesanan) {
+            if ($pesanan->wasChanged(['status']) && $pesanan->status === 'selesai') {
+                // Final calculation when order is completed
+                $pesanan->updateTotalHarga();
+            }
+        });
+    }
 }

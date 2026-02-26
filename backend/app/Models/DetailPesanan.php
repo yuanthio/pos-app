@@ -49,4 +49,25 @@ class DetailPesanan extends Model
         $this->subtotal = $this->jumlah * $this->harga_satuan;
         $this->save();
     }
+
+    /**
+     * Boot method to handle events
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Update pesanan total when detail pesanan is created, updated, or deleted
+        static::created(function ($detailPesanan) {
+            $detailPesanan->pesanan->updateTotalHarga();
+        });
+
+        static::updated(function ($detailPesanan) {
+            $detailPesanan->pesanan->updateTotalHarga();
+        });
+
+        static::deleted(function ($detailPesanan) {
+            $detailPesanan->pesanan->updateTotalHarga();
+        });
+    }
 }
