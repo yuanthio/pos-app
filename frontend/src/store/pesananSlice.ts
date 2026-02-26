@@ -8,6 +8,7 @@ import type {
   AddItemResponse,
   UpdateItemResponse,
   RemoveItemResponse,
+  OrderActionResponse,
   PesananFilters,
   OrderSummary,
   DetailPesanan
@@ -165,6 +166,44 @@ export const fetchOrderSummary = createAsyncThunk<
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Gagal mengambil ringkasan pesanan'
+      )
+    }
+  }
+)
+
+export const completeOrder = createAsyncThunk<
+  Pesanan,
+  number,
+  { rejectValue: string }
+>(
+  'pesanan/completeOrder',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const response = await api.post<OrderActionResponse>(`/pelayan/orders/${orderId}/complete`)
+      return response.data.data
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Gagal menyelesaikan pesanan'
+      )
+    }
+  }
+)
+
+export const cancelOrder = createAsyncThunk<
+  Pesanan,
+  { orderId: number; alasan?: string },
+  { rejectValue: string }
+>(
+  'pesanan/cancelOrder',
+  async ({ orderId, alasan }, { rejectWithValue }) => {
+    try {
+      const response = await api.post<OrderActionResponse>(`/pelayan/orders/${orderId}/cancel`, {
+        alasan
+      })
+      return response.data.data
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Gagal membatalkan pesanan'
       )
     }
   }
@@ -360,6 +399,72 @@ const pesananSlice = createSlice({
       .addCase(deleteOrder.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string
+      })
+
+    // completeOrder
+    builder
+      .addCase(completeOrder.pending, (state, action) => {
+        // Pure optimistic update - no loading state
+        const orderId = action.meta.arg
+        if (state.currentOrder && state.currentOrder.id === orderId) {
+          state.currentOrder.status = 'selesai'
+        }
+        // Update order in orders array
+        const index = state.orders.findIndex(order => order.id === orderId)
+        if (index !== -1) {
+          state.orders[index].status = 'selesai'
+        }
+      })
+      .addCase(completeOrder.fulfilled, (state, action) => {
+        // Update current order with server data (final state)
+        if (state.currentOrder && state.currentOrder.id === action.payload.id) {
+          state.currentOrder = action.payload
+        }
+        // Update order in orders array
+        const index = state.orders.findIndex(order => order.id === action.payload.id)
+        if (index !== -1) {
+          state.orders[index] = action.payload
+        }
+      })
+      .addCase(completeOrder.rejected, () => {
+        // Keep optimistic state, just show error
+        // No loading state change
+      })
+
+    // cancelOrder
+    builder
+      .addCase(cancelOrder.pending, (state, action) => {
+        // Pure optimistic update - no loading state
+        const { orderId, alasan } = action.meta.arg
+        if (state.currentOrder && state.currentOrder.id === orderId) {
+          state.currentOrder.status = 'dibatalkan'
+          if (alasan) {
+            state.currentOrder.catatan = `${state.currentOrder.catatan ? state.currentOrder.catatan + '\n' : ''}Dibatalkan: ${alasan}`
+          }
+        }
+        // Update order in orders array
+        const index = state.orders.findIndex(order => order.id === orderId)
+        if (index !== -1) {
+          state.orders[index].status = 'dibatalkan'
+          if (alasan) {
+            state.orders[index].catatan = `${state.orders[index].catatan ? state.orders[index].catatan + '\n' : ''}Dibatalkan: ${alasan}`
+          }
+        }
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        // Update current order with server data (final state)
+        if (state.currentOrder && state.currentOrder.id === action.payload.id) {
+          state.currentOrder = action.payload
+        }
+        // Update order in orders array
+        const index = state.orders.findIndex(order => order.id === action.payload.id)
+        if (index !== -1) {
+          state.orders[index] = action.payload
+        }
+      })
+      .addCase(cancelOrder.rejected, () => {
+        // Keep optimistic state, just show error
+        // No loading state change
       })
   },
 })
