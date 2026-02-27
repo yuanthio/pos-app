@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '@/store'
 import { fetchMejas, updateTableStatus, clearError } from '@/store/mejaSlice'
 import type { Meja } from '@/types'
 import { toast } from 'sonner'
 import { Progress } from '@/components/ui/progress'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import MejaStats from './MejaStats'
 import MejaFilters from './MejaFilters'
 import MejaGrid from './MejaGrid'
 import UpdateStatusDialog from './UpdateStatusDialog'
+
+const ITEMS_PER_PAGE = 16;
 
 export default function DaftarMeja() {
   const dispatch = useDispatch<AppDispatch>()
@@ -20,10 +24,24 @@ export default function DaftarMeja() {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null)
   const [newStatus, setNewStatus] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => {
-    dispatch(fetchMejas())
-  }, [dispatch])
+  // Pagination logic
+  const totalPages = Math.ceil(totalMeja / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages))
+  }
 
   useEffect(() => {
     if (error) {
@@ -38,19 +56,25 @@ export default function DaftarMeja() {
     return matchesSearch && matchesStatus
   })
 
+  // Apply pagination to filtered results
+  const paginatedMejas = filteredMejas.slice(startIndex, endIndex)
+  const paginatedTotalPages = Math.ceil(filteredMejas.length / ITEMS_PER_PAGE)
+
   const handleUpdateStatus = (meja: Meja) => {
     setSelectedMeja(meja)
     setNewStatus(meja.status)
     setShowUpdateDialog(true)
   }
 
-  const confirmUpdateStatus = async () => {
+  const confirmUpdateStatus = async (data: { status: string; nama_pelanggan?: string; catatan?: string }) => {
     if (!selectedMeja) return
 
     try {
       await dispatch(updateTableStatus({
         mejaId: selectedMeja.id,
-        status: newStatus
+        status: data.status,
+        nama_pelanggan: data.nama_pelanggan,
+        catatan: data.catatan
       })).unwrap()
       
       toast.success('Status meja berhasil diperbarui')
@@ -59,6 +83,22 @@ export default function DaftarMeja() {
       setNewStatus('')
     } catch (error: any) {
       toast.error(error || 'Gagal memperbarui status meja')
+    }
+  }
+
+  const handleDisableTable = async (meja: Meja) => {
+    try {
+      const newStatus = meja.status === 'tidak_aktif' ? 'tersedia' : 'tidak_aktif'
+      
+      await dispatch(updateTableStatus({
+        mejaId: meja.id,
+        status: newStatus
+      })).unwrap()
+      
+      const action = meja.status === 'tidak_aktif' ? 'diaktifkan' : 'dinonaktifkan'
+      toast.success(`Meja ${meja.nomor_meja} berhasil ${action}`)
+    } catch (error: any) {
+      toast.error(error || 'Gagal mengubah status meja')
     }
   }
 
@@ -120,11 +160,57 @@ export default function DaftarMeja() {
 
       {/* Tables Grid */}
       <MejaGrid
-        mejas={filteredMejas}
+        mejas={paginatedMejas}
         loading={loading}
         onUpdateStatus={handleUpdateStatus}
         onCreateOrder={() => dispatch(fetchMejas())}
+        onDisableTable={handleDisableTable}
       />
+
+      {/* Pagination Controls */}
+      {paginatedTotalPages > 1 && (
+        <div className="flex items-center justify-between mt-6">
+          <div className="text-sm text-muted-foreground">
+            Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredMejas.length)} dari {filteredMejas.length} meja
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              variant="outline"
+              size="sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: paginatedTotalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              onClick={handleNextPage}
+              disabled={currentPage === paginatedTotalPages}
+              variant="outline"
+              size="sm"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Update Status Dialog */}
       <UpdateStatusDialog

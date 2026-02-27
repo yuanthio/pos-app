@@ -6,11 +6,17 @@ import MejaCard from './MejaCard'
 interface MejaGridProps {
   mejas: Meja[]
   loading: boolean
-  onUpdateStatus: (meja: Meja) => void
-  onCreateOrder: () => void
+  onUpdateStatus?: (meja: Meja) => void
+  onCreateOrder?: () => void
+  onRealUpdate?: () => void
+  onDisableTable?: (meja: Meja) => void
 }
 
-export default function MejaGrid({ mejas, loading, onUpdateStatus, onCreateOrder }: MejaGridProps) {
+export default function MejaGrid({ mejas, loading, onUpdateStatus, onCreateOrder, onDisableTable }: MejaGridProps) {
+  const handleCreateOrder = () => {
+    // Redux handles optimistic updates, just call onCreateOrder for real update
+    onCreateOrder?.()
+  }
   if (loading) {
     return (
       <Card>
@@ -43,13 +49,15 @@ export default function MejaGrid({ mejas, loading, onUpdateStatus, onCreateOrder
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {mejas.map((meja) => (
         <MejaCard
           key={meja.id}
           meja={meja}
           onUpdateStatus={onUpdateStatus}
-          onCreateOrder={onCreateOrder}
+          onCreateOrder={handleCreateOrder}
+          onRealUpdate={handleCreateOrder}
+          onDisableTable={onDisableTable}
         />
       ))}
     </div>
