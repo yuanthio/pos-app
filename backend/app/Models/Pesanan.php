@@ -35,6 +35,7 @@ class Pesanan extends Model
             'menunggu' => 'Menunggu',
             'diproses' => 'Diproses',
             'selesai' => 'Selesai',
+            'dibayar' => 'Dibayar',
             'dibatalkan' => 'Dibatalkan'
         };
     }
@@ -89,6 +90,14 @@ class Pesanan extends Model
     public function canBeCancelled(): bool
     {
         return in_array($this->status, ['menunggu', 'diproses']);
+    }
+
+    /**
+     * Check if pesanan can be closed by kasir
+     */
+    public function canBeClosed(): bool
+    {
+        return in_array($this->status, ['diproses', 'selesai']);
     }
 
     /**
