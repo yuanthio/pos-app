@@ -7,7 +7,7 @@ import {
   Plus,
   AlertCircle
 } from 'lucide-react'
-import { canCompleteOrder, canCancelOrder, canModifyOrder } from '@/utils/pesananHelpers'
+import { canCompleteOrder, canCancelOrder, canModifyOrder, getStatusColor, getStatusLabel } from '@/utils/pesananHelpers'
 import { CompleteOrderDialog } from './CompleteOrderDialog'
 import { CancelOrderDialog } from './CancelOrderDialog'
 import type { Pesanan } from '@/types/pesanan'
@@ -64,16 +64,9 @@ export function OrderActions({ order, onAddItem }: OrderActionsProps) {
           <span className="text-sm font-medium text-gray-700">Status Pesanan</span>
           <Badge 
             variant="secondary" 
-            className={
-              order.status === 'menunggu' ? 'bg-yellow-100 text-yellow-800' :
-              order.status === 'diproses' ? 'bg-blue-100 text-blue-800' :
-              order.status === 'selesai' ? 'bg-green-100 text-green-800' :
-              'bg-red-100 text-red-800'
-            }
+            className={getStatusColor(order.status)}
           >
-            {order.status === 'menunggu' ? 'Menunggu' :
-             order.status === 'diproses' ? 'Diproses' :
-             order.status === 'selesai' ? 'Selesai' : 'Dibatalkan'}
+            {getStatusLabel(order.status)}
           </Badge>
         </div>
 
@@ -128,7 +121,10 @@ export function OrderActions({ order, onAddItem }: OrderActionsProps) {
             <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
               <AlertCircle className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600">
-                Tidak ada aksi yang tersedia untuk pesanan ini
+                {order.status === 'dibayar' 
+                  ? 'Pesanan ini sudah dibayar. Hubungi kasir untuk informasi lebih lanjut.'
+                  : 'Tidak ada aksi yang tersedia untuk pesanan ini'
+                }
               </span>
             </div>
           )}
