@@ -2,22 +2,6 @@
 
 A modern web-based Point of Sale application built with Laravel (Backend) and React (Frontend) for restaurant and cafe management.
 
-## 🚀 Features
-
-### Core Features
-- **Table Management**: Manage restaurant tables with booking and order tracking
-- **Order Management**: Complete order workflow from creation to completion
-- **Menu Management**: Food and beverage menu with pricing
-- **User Management**: Role-based access (Admin, Pelayan, Kasir)
-- **Real-time Updates**: Live status updates across all devices
-
-### Advanced Features
-- **Smart Booking System**: Automatic table status transitions
-- **Order Tracking**: Complete order lifecycle management
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Data Analytics**: Sales and performance reporting
-- **Receipt Generation**: Professional receipt printing
-
 ## 📋 Prerequisites
 
 ### Required Software
@@ -165,7 +149,7 @@ pos-app/
 │   │   │   ├── admin/
 │   │   │   ├── pelayan/
 │   │   │   ├── kasir/
-│   │   │   └── common/
+│   │   │   └── ...
 │   │   ├── pages/
 │   │   │   ├── admin/
 │   │   │   ├── pelayan/
@@ -177,30 +161,9 @@ pos-app/
 │   │   └── ...
 │   ├── public/
 │   └── ...
-├── README.md              # This file
+├
 └── .gitignore
 ```
-
-## 👥 User Roles & Permissions
-
-### Admin
-- Full system access
-- User management
-- Menu management
-- System configuration
-- Reports and analytics
-
-### Pelayan (Waiter)
-- Table management
-- Order creation and management
-- Booking management
-- Customer service
-
-### Kasir (Cashier)
-- Order processing
-- Payment handling
-- Receipt generation
-- Sales reporting
 
 ## 🔧 Development Commands
 
@@ -245,95 +208,6 @@ npm install
 npm install package-name
 ```
 
-## 🧪 Testing
-
-### Backend Testing
-```bash
-# Run all tests
-php artisan test
-
-# Run specific test
-php artisan test --filter TestName
-
-# Generate test coverage
-php artisan test --coverage
-```
-
-### Frontend Testing
-```bash
-# Run tests (if configured)
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-## 📊 API Documentation
-
-### Authentication Endpoints
-- `POST /api/login` - User login
-- `POST /api/logout` - User logout
-- `GET /api/user` - Get current user info
-
-### Table Management
-- `GET /api/meja` - Get all tables
-- `POST /api/meja/book` - Book a table
-- `PUT /api/meja/{id}/status` - Update table status
-- `DELETE /api/meja/{id}` - Delete table
-
-### Order Management
-- `GET /api/pesanan` - Get all orders
-- `POST /api/pesanan` - Create new order
-- `PUT /api/pesanan/{id}` - Update order
-- `DELETE /api/pesanan/{id}` - Delete order
-
-### Menu Management
-- `GET /api/makanan` - Get all menu items
-- `POST /api/makanan` - Add new menu item
-- `PUT /api/makanan/{id}` - Update menu item
-- `DELETE /api/makanan/{id}` - Delete menu item
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### 1. Database Connection Error
-```bash
-# Check database credentials in .env
-# Ensure MySQL/MariaDB is running
-# Verify database exists
-```
-
-#### 2. CORS Issues
-```bash
-# Check CORS configuration in backend
-# Verify frontend API URL in .env
-```
-
-#### 3. Migration Errors
-```bash
-# Clear migrations table
-php artisan migrate:fresh
-
-# Check database permissions
-```
-
-#### 4. Frontend Build Errors
-```bash
-# Clear node modules
-rm -rf node_modules package-lock.json
-npm install
-
-# Clear cache
-npm run build --reset-cache
-```
-
-### Debug Mode
-Enable debug mode in `.env`:
-```env
-APP_DEBUG=true
-```
-
 ## 📝 Environment Variables
 
 ### Backend (.env)
@@ -363,62 +237,3 @@ SESSION_LIFETIME=120
 VITE_API_BASE_URL=http://localhost:8000/api
 VITE_APP_NAME=POS Application
 ```
-
-## 🚀 Production Deployment
-
-### Backend Deployment
-```bash
-# Install production dependencies
-composer install --optimize-autoloader --no-dev
-
-# Optimize configuration
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# Set production environment
-APP_ENV=production
-APP_DEBUG=false
-
-# Run production migrations
-php artisan migrate --force
-```
-
-### Frontend Deployment
-```bash
-# Build for production
-npm run build
-
-# Deploy build files to web server
-# Configure web server to serve static files
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in GitHub
-- Email: support@example.com
-- Documentation: [Wiki](https://github.com/yuanthio/pos-app/wiki)
-
-## 🔄 Version History
-
-- **v1.0.0** - Initial release with core POS functionality
-- **v1.1.0** - Enhanced table management and booking system
-- **v1.2.0** - Improved UI/UX and mobile responsiveness
-- **v1.3.0** - Advanced reporting and analytics
-
----
-
-**Built with ❤️ using Laravel and React**
