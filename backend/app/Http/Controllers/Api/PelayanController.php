@@ -20,6 +20,22 @@ class PelayanController extends Controller
     {
         $mejas = Meja::all();
         
+        // Add parsed customer info to each meja
+        $mejasWithCustomer = $mejas->map(function ($meja) {
+            $mejaArray = $meja->toArray();
+            
+            // Explicitly get accessor attributes
+            $customerName = $meja->getNamaPelangganAttribute();
+            $bookingNotes = $meja->getBookingNotesAttribute();
+            
+            // Debug: log the parsing
+            \Log::info("Meja {$meja->id}: catatan='{$meja->catatan}', parsed_nama='{$customerName}', parsed_notes='{$bookingNotes}'");
+            
+            $mejaArray['nama_pelanggan'] = $customerName;
+            $mejaArray['booking_notes'] = $bookingNotes; // Tambah booking notes untuk debug
+            return $mejaArray;
+        });
+        
         // Group by status
         $statusCount = [
             'tersedia' => $mejas->where('status', 'tersedia')->count(),
@@ -31,7 +47,7 @@ class PelayanController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'mejas' => $mejas,
+                'mejas' => $mejasWithCustomer,
                 'status_count' => $statusCount,
                 'total_meja' => $mejas->count()
             ]
@@ -51,11 +67,22 @@ class PelayanController extends Controller
 
         $meja = Meja::findOrFail($request->meja_id);
 
-        if (!$meja->isAvailable()) {
+        // Allow order creation from 'dipesan' tables as well
+        if (!$meja->isAvailable() && $meja->status !== 'dipesan') {
             return response()->json([
                 'success' => false,
                 'message' => 'Meja tidak tersedia untuk pesanan baru'
             ], 400);
+        }
+
+        // Extract customer info from booking if available
+        $namaPelanggan = $request->nama_pelanggan;
+        $catatan = $request->catatan;
+
+        if (!$namaPelanggan && $meja->status === 'dipesan') {
+            $namaPelanggan = $meja->nama_pelanggan;
+            // Jangan sertakan catatan booking saat membuat pesanan
+            $catatan = null;
         }
 
         // Update table status to terisi
@@ -65,10 +92,10 @@ class PelayanController extends Controller
         $pesanan = Pesanan::create([
             'meja_id' => $request->meja_id,
             'user_id' => $request->user()->id,
-            'nama_pelanggan' => $request->nama_pelanggan,
+            'nama_pelanggan' => $namaPelanggan,
             'status' => 'menunggu',
             'total_harga' => 0,
-            'catatan' => $request->catatan
+            'catatan' => $catatan // Catatan bisa null jika dari booking
         ]);
 
         return response()->json([
@@ -78,25 +105,39 @@ class PelayanController extends Controller
         ]);
     }
 
-    public function deleteOrder($pesanan)
+    public function deleteOrder($pesanan): JsonResponse
     {
-        $pesanan = Pesanan::findOrFail($pesanan);
-        
-        // Get table info before deleting
-        $meja = $pesanan->meja;
-        
-        // Delete the order
-        $pesanan->delete();
-        
-        // Update table status to available if it was occupied by this order
-        if ($meja && $meja->status === 'terisi') {
-            $meja->update(['status' => 'tersedia']);
+        try {
+            $order = Pesanan::findOrFail($pesanan);
+            
+            // Get meja information before deleting
+            $meja = $order->meja;
+            
+            // Hapus pesanan
+            $order->delete();
+            
+            // Update meja status ke tersedia dan hapus catatan jika dari booking
+            if ($meja) {
+                $updateData = ['status' => 'tersedia'];
+                
+                // Hapus catatan jika meja ini dari booking (ada catatan booking)
+                if ($meja->catatan && str_contains($meja->catatan, 'Booking untuk:')) {
+                    $updateData['catatan'] = null;
+                }
+                
+                $meja->update($updateData);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesanan berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus pesanan: ' . $e->getMessage()
+            ], 500);
         }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Pesanan berhasil dihapus'
-        ]);
     }
 
     public function bookTable(Request $request, Meja $meja): JsonResponse
@@ -153,14 +194,33 @@ class PelayanController extends Controller
     public function updateTableStatus(Request $request, Meja $meja): JsonResponse
     {
         $request->validate([
-            'status' => 'required|in:tersedia,terisi,dipesan,tidak_aktif'
+            'status' => 'required|in:tersedia,terisi,dipesan,tidak_aktif',
+            'nama_pelanggan' => 'nullable|string|max:255',
+            'catatan' => 'nullable|string'
         ]);
 
-        $meja->update(['status' => $request->status]);
+        $updateData = ['status' => $request->status];
+
+        // Handle nama_pelanggan and catatan for 'dipesan' status
+        if ($request->status === 'dipesan') {
+            if ($request->nama_pelanggan) {
+                $updateData['catatan'] = $request->catatan ? 
+                    "Booking untuk: {$request->nama_pelanggan}" . 
+                    ($request->catatan ? " - {$request->catatan}" : "") : 
+                    "Booking untuk: {$request->nama_pelanggan}";
+            }
+        }
+
+        // Hapus catatan saat status berubah ke 'terisi'
+        if ($request->status === 'terisi') {
+            $updateData['catatan'] = null;
+        }
+
+        $meja->update($updateData);
 
         return response()->json([
             'success' => true,
-            'data' => $meja,
+            'data' => $meja->fresh(),
             'message' => 'Status meja berhasil diperbarui'
         ]);
     }
@@ -511,10 +571,17 @@ class PelayanController extends Controller
                 'catatan' => $pesanan->catatan . ($request->alasan ? "\n\nAlasan pembatalan: " . $request->alasan : "")
             ]);
 
-            // Update table status to tersedia
+            // Update table status to tersedia dan hapus catatan jika dari booking
             $meja = $pesanan->meja;
             if ($meja) {
-                $meja->update(['status' => 'tersedia']);
+                $updateData = ['status' => 'tersedia'];
+                
+                // Hapus catatan jika meja ini dari booking (ada catatan booking)
+                if ($meja->catatan && str_contains($meja->catatan, 'Booking untuk:')) {
+                    $updateData['catatan'] = null;
+                }
+                
+                $meja->update($updateData);
             }
 
             DB::commit();
