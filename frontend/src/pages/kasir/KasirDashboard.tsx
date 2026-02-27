@@ -1,15 +1,88 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuthUtils } from '@/hooks/useAuth'
-import { LogOut, ShoppingCart, DollarSign, Users, TrendingUp } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuthUtils } from '@/hooks/useAuth';
+import { LogOut, ShoppingCart, DollarSign, Users, TrendingUp, List, History, Receipt } from 'lucide-react';
+import OrderList from '@/components/kasir/OrderList';
+import OrderDetail from '@/components/kasir/OrderDetail';
+import PaymentHistory from '@/components/kasir/PaymentHistory';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import { fetchKasirOrders, fetchPaymentHistory } from '@/store/kasirSlice';
+import { formatCurrency } from '@/utils/kasirHelpers';
+import type { KasirOrder } from '@/types/kasir';
 
 export default function KasirDashboard() {
-  const { getDisplayName, getRoleDisplay, logout } = useAuthUtils()
+  const { getDisplayName, getRoleDisplay, logout } = useAuthUtils();
+  const [selectedOrder, setSelectedOrder] = useState<KasirOrder | null>(null);
+  const [activeTab, setActiveTab] = useState('orders');
+  const dispatch = useAppDispatch();
+  const { orders, paymentHistory } = useAppSelector((state) => state.kasir);
+
+  // Calculate dynamic stats
+  const calculateStats = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Today's orders (all orders created today)
+    const todayOrders = orders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    });
+
+    // Today's paid orders (from paymentHistory)
+    const todayPaidOrders = paymentHistory.filter(order => {
+      const orderDate = new Date(order.created_at);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    });
+
+    // Today's revenue (from paid orders)
+    const todayRevenue = todayPaidOrders.reduce((total, order) => total + (order.total_harga || 0), 0);
+
+    // Unique customers today (from both orders and payment history)
+    const allTodayOrders = [...todayOrders, ...todayPaidOrders];
+    const uniqueCustomers = new Set(
+      allTodayOrders.map(order => order.nama_pelanggan || 'Guest')
+    ).size;
+
+    return {
+      totalOrders: todayOrders.length,
+      todayRevenue,
+      paidOrders: todayPaidOrders.length,
+      uniqueCustomers
+    };
+  };
+
+  const stats = calculateStats();
+
+  // Fetch data on component mount only
+  useEffect(() => {
+    // Initial fetch only
+    dispatch(fetchKasirOrders());
+    dispatch(fetchPaymentHistory());
+  }, [dispatch]);
 
   const handleLogout = async () => {
-    await logout()
-    window.location.href = '/login'
-  }
+    await logout();
+    window.location.href = '/login';
+  };
+
+  const handleSelectOrder = (order: KasirOrder) => {
+    setSelectedOrder(order);
+    setActiveTab('detail');
+  };
+
+  const handleViewHistoryDetail = (order: KasirOrder) => {
+    setSelectedOrder(order);
+    setActiveTab('detail');
+  };
+
+  const handleBackToOrders = () => {
+    setSelectedOrder(null);
+    setActiveTab('orders');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,7 +104,7 @@ export default function KasirDashboard() {
                 onClick={handleLogout}
                 className="flex items-center gap-2"
               >
-                <LogOut className="size-4" />
+                <LogOut className="h-4 w-4" />
                 Logout
               </Button>
             </div>
@@ -45,87 +118,99 @@ export default function KasirDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Rp 0</div>
-              <p className="text-xs text-muted-foreground">+0% from last month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transactions</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Pesanan</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">+0% from last month</p>
+              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">Hari ini</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Customers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Pendapatan Hari Ini</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">+0% from last month</p>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.todayRevenue)}
+              </div>
+              <p className="text-xs text-muted-foreground">Dari {stats.paidOrders} transaksi</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Growth</CardTitle>
+              <CardTitle className="text-sm font-medium">Pesanan Dibayar</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0%</div>
-              <p className="text-xs text-muted-foreground">+0% from last month</p>
+              <div className="text-2xl font-bold">{stats.paidOrders}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.totalOrders > 0 ? Math.round((stats.paidOrders / stats.totalOrders) * 100) : 0}% dari total
+              </p>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
           <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks for cashier</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full justify-start" variant="default">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                New Transaction
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <DollarSign className="mr-2 h-4 w-4" />
-                View Today's Sales
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Users className="mr-2 h-4 w-4" />
-                Customer Management
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Latest sales activities</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pelanggan</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <ShoppingCart className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                <p>No transactions yet</p>
-                <p className="text-sm">Start by creating a new transaction</p>
-              </div>
+              <div className="text-2xl font-bold">{stats.uniqueCustomers}</div>
+              <p className="text-xs text-muted-foreground">Unik hari ini</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-200">
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Pesanan
+            </TabsTrigger>
+            <TabsTrigger value="detail" className="flex items-center gap-2" disabled={!selectedOrder}>
+              <Receipt className="h-4 w-4" />
+              Detail
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Riwayat
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Daftar Pesanan</h2>
+              <p className="text-muted-foreground">Pesanan yang siap untuk dibayar</p>
+            </div>
+            <OrderList onSelectOrder={handleSelectOrder} />
+          </TabsContent>
+
+          <TabsContent value="detail" className="space-y-6">
+            {selectedOrder ? (
+              <OrderDetail order={selectedOrder} onBack={handleBackToOrders} />
+            ) : (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground">Pilih pesanan untuk melihat detail</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Riwayat Pembayaran</h2>
+              <p className="text-muted-foreground">Semua transaksi yang telah selesai</p>
+            </div>
+            <PaymentHistory onViewDetail={handleViewHistoryDetail} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
-  )
+  );
 }
