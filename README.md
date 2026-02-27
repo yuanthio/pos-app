@@ -83,7 +83,7 @@ CREATE DATABASE pos_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 php artisan migrate
 ```
 
-#### 2.7 Seed Database (Optional)
+#### 2.7 Seed Database 
 ```bash
 php artisan db:seed
 ```
