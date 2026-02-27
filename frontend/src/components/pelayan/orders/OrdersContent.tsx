@@ -11,11 +11,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Clock, Eye, Trash2 } from 'lucide-react'
+import { Clock, Eye, Trash2, ChevronLeft, ChevronRight, Grid, List } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { toast } from 'sonner'
+import { getStatusColor, getStatusLabel } from '@/utils/pesananHelpers'
 import type { Pesanan } from '@/types'
 import type { AppDispatch } from '@/store'
 import { deleteOrder } from '@/store/pesananSlice'
@@ -24,40 +25,32 @@ interface OrdersContentProps {
   pesanans: Pesanan[]
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export default function OrdersContent({ pesanans }: OrdersContentProps) {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pesanan | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'menunggu':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'diproses':
-        return 'bg-blue-100 text-blue-800'
-      case 'selesai':
-        return 'bg-green-100 text-green-800'
-      case 'dibatalkan':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  // Pagination logic
+  const totalPages = Math.ceil(pesanans.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const currentItems = pesanans.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'menunggu':
-        return 'Menunggu'
-      case 'diproses':
-        return 'Diproses'
-      case 'selesai':
-        return 'Selesai'
-      case 'dibatalkan':
-        return 'Dibatalkan'
-      default:
-        return status
-    }
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages))
   }
 
   const handleViewDetail = (orderId: number) => {
@@ -99,8 +92,28 @@ export default function OrdersContent({ pesanans }: OrdersContentProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Daftar Pesanan</h2>
-        <div className="text-sm text-gray-600">
-          Total: {pesanans.length} pesanan
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-600">
+            Total: {pesanans.length} pesanan
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => setViewMode('list')}
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+            >
+              <List className="h-4 w-4" />
+              List
+            </Button>
+            <Button
+              onClick={() => setViewMode('grid')}
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+            >
+              <Grid className="h-4 w-4" />
+              Grid
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -115,8 +128,11 @@ export default function OrdersContent({ pesanans }: OrdersContentProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {pesanans.map((pesanan) => (
+        <>
+          {/* List View */}
+          {viewMode === 'list' && (
+            <div className="grid gap-4">
+              {currentItems.map((pesanan) => (
             <Card key={pesanan.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -176,24 +192,132 @@ export default function OrdersContent({ pesanans }: OrdersContentProps) {
                         className="flex items-center space-x-2"
                       >
                         <Eye className="w-4 h-4" />
-                        <span>Detail</span>
+                        <span>{pesanan.status === 'dibayar' ? 'Lihat Detail' : 'Detail'}</span>
                       </Button>
                       
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteOrder(pesanan)}
-                        className="flex items-center space-x-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </Button>
+                      {pesanan.status !== 'dibayar' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteOrder(pesanan)}
+                          className="flex items-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+            </div>
+          )}
+
+          {/* Grid View */}
+          {viewMode === 'grid' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentItems.map((pesanan) => (
+                <Card key={pesanan.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm truncate">
+                          {pesanan.nama_pelanggan || 'Guest'}
+                        </h3>
+                        <Badge className={getStatusColor(pesanan.status)} variant="secondary">
+                          {getStatusLabel(pesanan.status)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Meja:</span>
+                          <span>{pesanan.meja?.nomor_meja || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Total:</span>
+                          <span className="font-semibold text-green-600">
+                            Rp {pesanan.total_harga?.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {pesanan.detail_pesanans?.length || 0} item
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleViewDetail(pesanan.id)}
+                          className="flex-1"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          {pesanan.status === 'dibayar' ? 'Lihat' : 'Detail'}
+                        </Button>
+                        
+                        {pesanan.status !== 'dibayar' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteOrder(pesanan)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Menampilkan {startIndex + 1} - {Math.min(endIndex, pesanans.length)} dari {pesanans.length} pesanan
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              variant="outline"
+              size="sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              variant="outline"
+              size="sm"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
       
