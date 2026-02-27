@@ -149,9 +149,23 @@ export const fetchPesanans = createAsyncThunk(
 
 export const updateTableStatus = createAsyncThunk(
   'meja/updateTableStatus',
-  async ({ mejaId, status }: { mejaId: number; status: string }, { rejectWithValue }) => {
+  async ({ 
+    mejaId, 
+    status, 
+    nama_pelanggan, 
+    catatan 
+  }: { 
+    mejaId: number; 
+    status: string; 
+    nama_pelanggan?: string; 
+    catatan?: string; 
+  }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/pelayan/tables/${mejaId}`, { status })
+      const response = await api.put(`/pelayan/tables/${mejaId}`, { 
+        status, 
+        nama_pelanggan, 
+        catatan 
+      })
       return response.data
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update table status')

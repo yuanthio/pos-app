@@ -3,6 +3,7 @@ import makananReducer from './makananSlice'
 import mejaReducer from './mejaSlice'
 import pesananReducer from './pesananSlice'
 import menuReducer from './menuSlice'
+import kasirReducer from './kasirSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     meja: mejaReducer,
     pesanan: pesananReducer,
     menu: menuReducer,
+    kasir: kasirReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
