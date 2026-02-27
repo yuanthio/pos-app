@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'pelayan' => \App\Http\Middleware\PelayanMiddleware::class,
+            'kasir' => \App\Http\Middleware\KasirMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
