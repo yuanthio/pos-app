@@ -19,7 +19,7 @@ export interface Pesanan {
   meja_id: number
   user_id: number
   nama_pelanggan?: string
-  status: 'menunggu' | 'diproses' | 'selesai' | 'dibatalkan'
+  status: 'menunggu' | 'diproses' | 'selesai' | 'dibayar' | 'dibatalkan'
   total_harga: number
   catatan?: string
   created_at: string

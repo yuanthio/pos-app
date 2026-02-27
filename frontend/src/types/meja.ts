@@ -4,6 +4,7 @@ export interface Meja {
   status: 'tersedia' | 'terisi' | 'dipesan' | 'tidak_aktif'
   kapasitas: number
   catatan: string | null
+  nama_pelanggan?: string | null
   created_at: string
   updated_at: string
 }
