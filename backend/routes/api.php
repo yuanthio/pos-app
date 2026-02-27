@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\MakananController;
 use App\Http\Controllers\Api\PelayanController;
+use App\Http\Controllers\Api\KasirController;
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -49,5 +50,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/makanans/{id}', [MakananController::class, 'update']);
         Route::delete('/makanans/{id}', [MakananController::class, 'destroy']);
         Route::patch('/makanans/{id}/toggle-availability', [MakananController::class, 'toggleAvailability']);
+    });
+
+    // Kasir routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/kasir/orders', [KasirController::class, 'getOrders']);
+        Route::get('/kasir/orders/{pesanan}', [KasirController::class, 'getOrderDetails']);
+        Route::post('/kasir/orders/{pesanan}/close', [KasirController::class, 'closeOrder']);
+        Route::post('/kasir/orders/{pesanan}/receipt', [KasirController::class, 'generateReceipt']);
+        Route::get('/kasir/orders/{pesanan}/receipt/download', [KasirController::class, 'downloadReceipt']);
+        Route::get('/kasir/payment-history', [KasirController::class, 'getPaymentHistory']);
     });
 });
