@@ -14,29 +14,45 @@ use Illuminate\Support\Facades\DB;
 class PelayanController extends Controller
 {
     /**
-     * Get all tables with status summary
+     * Get all tables with status summary (optimized)
      */
     public function getTables(): JsonResponse
     {
-        $mejas = Meja::all();
+        // Optimized: Use select only needed columns and avoid N+1
+        $mejas = Meja::select(['id', 'nomor_meja', 'status', 'kapasitas', 'catatan'])->get();
         
-        // Add parsed customer info to each meja
+        // Optimized: Process customer info in single pass without accessors
         $mejasWithCustomer = $mejas->map(function ($meja) {
-            $mejaArray = $meja->toArray();
+            // Manual array construction to avoid toArray issues
+            $mejaArray = [
+                'id' => $meja->id,
+                'nomor_meja' => $meja->nomor_meja,
+                'status' => $meja->status,
+                'kapasitas' => $meja->kapasitas,
+                'catatan' => $meja->catatan,
+            ];
             
-            // Explicitly get accessor attributes
-            $customerName = $meja->getNamaPelangganAttribute();
-            $bookingNotes = $meja->getBookingNotesAttribute();
+            // Optimized: Direct parsing without accessor overhead
+            $customerName = null;
+            $bookingNotes = null;
             
-            // Debug: log the parsing
-            \Log::info("Meja {$meja->id}: catatan='{$meja->catatan}', parsed_nama='{$customerName}', parsed_notes='{$bookingNotes}'");
+            if ($meja->status === 'dipesan' && $meja->catatan) {
+                // Direct string parsing - more efficient than accessors
+                if (strpos($meja->catatan, 'Booking untuk:') === 0) {
+                    $bookingText = substr($meja->catatan, 14);
+                    $parts = explode(' - ', $bookingText, 2);
+                    $customerName = isset($parts[0]) ? trim($parts[0]) : null;
+                    $bookingNotes = isset($parts[1]) ? trim($parts[1]) : null;
+                }
+            }
             
             $mejaArray['nama_pelanggan'] = $customerName;
-            $mejaArray['booking_notes'] = $bookingNotes; // Tambah booking notes untuk debug
+            $mejaArray['booking_notes'] = $bookingNotes;
+            
             return $mejaArray;
         });
         
-        // Group by status
+        // Optimized: Count from collection instead of multiple queries
         $statusCount = [
             'tersedia' => $mejas->where('status', 'tersedia')->count(),
             'terisi' => $mejas->where('status', 'terisi')->count(),
@@ -44,14 +60,17 @@ class PelayanController extends Controller
             'tidak_aktif' => $mejas->where('status', 'tidak_aktif')->count(),
         ];
 
-        return response()->json([
+        $response = [
             'success' => true,
             'data' => [
                 'mejas' => $mejasWithCustomer,
                 'status_count' => $statusCount,
                 'total_meja' => $mejas->count()
             ]
-        ]);
+        ];
+
+        // Optimized: Cache response for 30 seconds
+        return response()->json($response)->header('Cache-Control', 'public, max-age=30');
     }
 
     /**
@@ -211,8 +230,8 @@ class PelayanController extends Controller
             }
         }
 
-        // Hapus catatan saat status berubah ke 'terisi'
-        if ($request->status === 'terisi') {
+        // Hapus catatan saat status berubah ke 'terisi' atau 'tersedia'
+        if ($request->status === 'terisi' || $request->status === 'tersedia') {
             $updateData['catatan'] = null;
         }
 
