@@ -18,7 +18,10 @@ export default function PelayanDashboard() {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const { statusCount } = useSelector((state: RootState) => state.meja)
-  const { orders, loading } = useSelector((state: RootState) => state.pesanan)
+  
+  // Get pesanan state untuk caching
+  const pesananState = useSelector((state: RootState) => state.pesanan)
+  const { orders, loading } = pesananState
   
   // Set active tab based on URL parameter, default to 'overview'
   const [activeTab, setActiveTab] = useState<'overview' | 'tables' | 'orders'>(
@@ -31,10 +34,22 @@ export default function PelayanDashboard() {
   }, [activeTab])
 
   useEffect(() => {
-    // Fetch initial data
+    // Fetch initial data dengan caching
     dispatch(fetchMejas())
     dispatch(fetchOrders())
   }, [dispatch])
+
+  useEffect(() => {
+    // Hanya fetch orders saat tab berubah ke orders dan data sudah lama
+    if (activeTab === 'orders') {
+      const now = Date.now()
+      
+      // Fetch jika belum ada data atau data sudah lebih dari 15 detik
+      if (!pesananState.lastFetch || (now - pesananState.lastFetch) > 15000) {
+        dispatch(fetchOrders())
+      }
+    }
+  }, [activeTab, dispatch, pesananState.lastFetch])
 
   const handleLogout = async () => {
     await logout()
@@ -80,7 +95,7 @@ export default function PelayanDashboard() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <OrdersContent pesanans={orders} />
+            <OrdersContent pesanans={orders} loading={loading} />
           </TabsContent>
         </Tabs>
       </main>
