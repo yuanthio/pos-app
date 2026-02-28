@@ -23,26 +23,44 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $errors = $validator->errors();
+            
+            // Return specific error messages
+            if ($errors->has('email')) {
+                $message = 'Format email tidak valid';
+            } elseif ($errors->has('password')) {
+                $message = 'Password minimal 6 karakter';
+            } else {
+                $message = 'Harap lengkapi semua field';
+            }
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'message' => $message,
+                'errors' => $errors
             ], 422);
         }
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials'
+                'message' => 'Email tidak terdaftar'
+            ], 401);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password salah'
             ], 401);
         }
 
         if (!$user->is_active) {
             return response()->json([
                 'success' => false,
-                'message' => 'Account is deactivated'
+                'message' => 'Akun Anda tidak aktif. Hubungi administrator.'
             ], 403);
         }
 
@@ -54,7 +72,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => 'Login berhasil',
             'data' => [
                 'user' => [
                     'id' => $user->id,
