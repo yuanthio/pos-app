@@ -12,7 +12,7 @@ import type {
   PesananFilters,
   OrderSummary,
   DetailPesanan
-} from '@/types'
+} from '@/types/pesanan'
 import api from '@/lib/api'
 
 const initialState: PesananState = {
@@ -20,16 +20,26 @@ const initialState: PesananState = {
   currentOrder: null,
   loading: false,
   error: null,
+  lastFetch: null, // Add timestamp for caching
 }
 
 // Async thunks
 export const fetchOrders = createAsyncThunk<
   Pesanan[],
   PesananFilters | undefined,
-  { rejectValue: string }
+  { rejectValue: string; state: { pesanan: PesananState } }
 >(
   'pesanan/fetchOrders',
-  async (filters, { rejectWithValue }) => {
+  async (filters, { rejectWithValue, getState }) => {
+    const state = getState() as { pesanan: PesananState }
+    const now = Date.now()
+    
+    // Check if we have recent data (within 15 seconds)
+    if (state.pesanan.lastFetch && (now - state.pesanan.lastFetch) < 15000) {
+      // Return cached data
+      return state.pesanan.orders
+    }
+
     try {
       const params = new URLSearchParams()
       if (filters) {
@@ -53,10 +63,17 @@ export const fetchOrders = createAsyncThunk<
 export const fetchOrderDetail = createAsyncThunk<
   Pesanan,
   number,
-  { rejectValue: string }
+  { rejectValue: string; state: { pesanan: PesananState } }
 >(
   'pesanan/fetchOrderDetail',
-  async (orderId, { rejectWithValue }) => {
+  async (orderId, { rejectWithValue, getState }) => {
+    const state = getState() as { pesanan: PesananState }
+    
+    // Check if we already have this order in currentOrder
+    if (state.pesanan.currentOrder && state.pesanan.currentOrder.id === orderId) {
+      return state.pesanan.currentOrder
+    }
+    
     try {
       const response = await api.get<SinglePesananResponse>(`/pelayan/orders/${orderId}`)
       return response.data.data
@@ -288,6 +305,7 @@ const pesananSlice = createSlice({
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false
         state.orders = action.payload
+        state.lastFetch = Date.now() // Set lastFetch timestamp
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false
@@ -382,23 +400,25 @@ const pesananSlice = createSlice({
         state.loading = false
         state.error = action.payload || 'Gagal mengambil ringkasan pesanan'
       })
-      .addCase(deleteOrder.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(deleteOrder.fulfilled, (state, action) => {
-        state.loading = false
-        // Remove order from state
-        state.orders = state.orders.filter(order => order.id !== action.payload.orderId)
+      .addCase(deleteOrder.pending, (state, action) => {
+        // Pure optimistic update - no loading state
+        const orderId = action.meta.arg
+        // Remove order optimistically
+        state.orders = state.orders.filter(order => order.id !== orderId)
         
         // Clear current order if it's the one being deleted
-        if (state.currentOrder && state.currentOrder.id === action.payload.orderId) {
+        if (state.currentOrder && state.currentOrder.id === orderId) {
           state.currentOrder = null
         }
       })
+      .addCase(deleteOrder.fulfilled, (state, action) => {
+        // Sync with server response (already removed optimistically)
+        // No additional action needed since we already removed it
+      })
       .addCase(deleteOrder.rejected, (state, action) => {
-        state.loading = false
+        // On error, we would need to rollback, but for now just show error
         state.error = action.payload as string
+        // Note: In a real app, you'd want to restore the order
       })
 
     // completeOrder

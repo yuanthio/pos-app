@@ -28,8 +28,15 @@ const initialState: KasirState = {
 export const fetchKasirOrders = createAsyncThunk<
   KasirOrder[],
   void,
-  { rejectValue: string }
->('kasir/fetchOrders', async (_, { rejectWithValue }) => {
+  { rejectValue: string; state: { kasir: KasirState } }
+>('kasir/fetchOrders', async (_, { rejectWithValue, getState }) => {
+  const state = getState() as { kasir: KasirState }
+  
+  // Check if we already have orders
+  if (state.kasir.orders.length > 0) {
+    return state.kasir.orders
+  }
+  
   try {
     const response = await api.get<KasirOrdersResponse>('/kasir/orders');
     return response.data.data;
@@ -85,8 +92,15 @@ export const generateReceipt = createAsyncThunk<
 export const fetchPaymentHistory = createAsyncThunk<
   Pesanan[],
   void,
-  { rejectValue: string }
->('kasir/fetchPaymentHistory', async (_, { rejectWithValue }) => {
+  { rejectValue: string; state: { kasir: KasirState } }
+>('kasir/fetchPaymentHistory', async (_, { rejectWithValue, getState }) => {
+  const state = getState() as { kasir: KasirState }
+  
+  // Check if we already have payment history
+  if (state.kasir.paymentHistory.length > 0) {
+    return state.kasir.paymentHistory
+  }
+  
   try {
     const response = await api.get<PaymentHistoryResponse>('/kasir/payment-history');
     return response.data.data.data;
