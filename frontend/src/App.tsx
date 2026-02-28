@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { Toaster } from '@/components/ui/sonner'
 import LoginPage from '@/pages/Login'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import MakananManagement from '@/pages/admin/MakananManagement'
@@ -93,6 +94,7 @@ function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
+        <Toaster />
       </Router>
     </AuthProvider>
   )
