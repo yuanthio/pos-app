@@ -14,6 +14,7 @@ interface MejaState {
   error: string | null
   createOrderLoading: boolean
   updateStatusLoading: boolean
+  lastFetch: number | null
 }
 
 const initialState: MejaState = {
@@ -30,14 +31,34 @@ const initialState: MejaState = {
   loading: false,
   error: null,
   createOrderLoading: false,
-  updateStatusLoading: false
+  updateStatusLoading: false,
+  lastFetch: null
 }
 
 // Async thunks
 export const fetchMejas = createAsyncThunk(
   'meja/fetchMejas',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      // Optimized: Check if we have fresh data (cache for 30 seconds)
+      const state = getState() as { meja: MejaState }
+      const lastFetch = state.meja.lastFetch || 0
+      const now = Date.now()
+      const CACHE_DURATION = 30000 // 30 seconds
+      
+      // Return cached data if still fresh
+      if (lastFetch && (now - lastFetch) < CACHE_DURATION && state.meja.mejas.length > 0) {
+        // Simulate API response structure for cached data
+        return {
+          success: true,
+          data: {
+            mejas: state.meja.mejas,
+            status_count: state.meja.statusCount,
+            total_meja: state.meja.totalMeja
+          }
+        } as MejaResponse
+      }
+      
       const response = await api.get<MejaResponse>('/pelayan/tables')
       return response.data
     } catch (error: any) {
@@ -96,7 +117,7 @@ export const createOrder = createAsyncThunk(
     } catch (error: any) {
       // Rollback optimistic update on error
       dispatch(removePesananOptimistically(optimisticPesanan.id))
-      dispatch(updateTableStatusOptimistically({ mejaId: orderData.meja_id, newStatus: 'tersedia' }))
+      dispatch(updateTableStatusOptimistically({ mejaId: orderData.meja_id, newStatus: meja.status }))
       
       return rejectWithValue(error.response?.data?.message || 'Failed to create order')
     }
@@ -159,15 +180,29 @@ export const updateTableStatus = createAsyncThunk(
     status: string; 
     nama_pelanggan?: string; 
     catatan?: string; 
-  }, { rejectWithValue }) => {
+  }, { rejectWithValue, dispatch, getState }) => {
+    const state = getState() as { meja: MejaState }
+    const meja = state.meja.mejas.find(m => m.id === mejaId)
+    
+    if (!meja) {
+      return rejectWithValue('Meja tidak ditemukan')
+    }
+
+    // Optimistic update - update UI immediately
+    dispatch(updateTableStatusOptimistically({ mejaId, newStatus: status as any }))
+
     try {
       const response = await api.put(`/pelayan/tables/${mejaId}`, { 
         status, 
         nama_pelanggan, 
         catatan 
       })
+      
       return response.data
     } catch (error: any) {
+      // Rollback optimistic update on error
+      dispatch(updateTableStatusOptimistically({ mejaId, newStatus: meja.status as any }))
+      
       return rejectWithValue(error.response?.data?.message || 'Failed to update table status')
     }
   }
@@ -199,7 +234,15 @@ const mejaSlice = createSlice({
       const mejaIndex = state.mejas.findIndex(m => m.id === mejaId)
       if (mejaIndex !== -1) {
         const oldStatus = state.mejas[mejaIndex].status
+        
+        // Update status
         state.mejas[mejaIndex].status = newStatus
+        
+        // Clear catatan when status changes to 'terisi' or 'tersedia'
+        if (newStatus === 'terisi' || newStatus === 'tersedia') {
+          state.mejas[mejaIndex].catatan = null
+          state.mejas[mejaIndex].nama_pelanggan = null
+        }
         
         // Update status count
         state.statusCount[oldStatus as keyof MejaStatusCount] -= 1
@@ -208,9 +251,7 @@ const mejaSlice = createSlice({
     },
     // New reducers for unread orders management
     markOrdersAsRead: (state) => {
-      console.log('markOrdersAsRead called - before:', state.unreadOrdersCount)
       state.unreadOrdersCount = 0
-      console.log('markOrdersAsRead called - after:', state.unreadOrdersCount)
     },
     incrementUnreadOrders: (state, action: PayloadAction<number>) => {
       state.unreadOrdersCount += action.payload
@@ -232,6 +273,7 @@ const mejaSlice = createSlice({
         state.mejas = action.payload.data.mejas
         state.statusCount = action.payload.data.status_count
         state.totalMeja = action.payload.data.total_meja
+        state.lastFetch = Date.now() // Set lastFetch timestamp
       })
       .addCase(fetchMejas.rejected, (state, action) => {
         state.loading = false
@@ -241,15 +283,13 @@ const mejaSlice = createSlice({
     // Create Order
     builder
       .addCase(createOrder.pending, (state) => {
-        state.createOrderLoading = true
+        // Hapus loading state untuk pure optimistic update
         state.error = null
       })
-      .addCase(createOrder.fulfilled, (state) => {
-        state.createOrderLoading = false
+      .addCase(createOrder.fulfilled, () => {
         // Logic sudah dipindahkan ke optimistic update di thunk
       })
       .addCase(createOrder.rejected, (state, action) => {
-        state.createOrderLoading = false
         state.error = action.payload as string
         // Rollback sudah dilakukan di thunk
       })
@@ -277,12 +317,12 @@ const mejaSlice = createSlice({
       })
       .addCase(updateTableStatus.fulfilled, (state, action) => {
         state.updateStatusLoading = false
-        // Update the table status in local state
+        // Update the table status in local state with backend response
         const updatedMeja = action.payload.data
         const mejaIndex = state.mejas.findIndex(m => m.id === updatedMeja.id)
         if (mejaIndex !== -1) {
           const oldStatus = state.mejas[mejaIndex].status
-          state.mejas[mejaIndex] = updatedMeja
+          state.mejas[mejaIndex] = updatedMeja // Use backend data
           
           // Update status count
           state.statusCount[oldStatus as keyof MejaStatusCount] -= 1
