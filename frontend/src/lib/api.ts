@@ -35,11 +35,17 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // Only redirect on 401 if not on login page and not a login request
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
-      window.location.href = '/login'
+      const isLoginPage = window.location.pathname === '/login'
+      const isLoginRequest = error.config?.url === '/login'
+      
+      if (!isLoginPage && !isLoginRequest) {
+        // Token expired or invalid on protected routes
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        window.location.href = '/login'
+      }
     }
     
     // Log detailed error for debugging
