@@ -1,12 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import { Utensils } from 'lucide-react'
 import type { Pesanan } from '@/types'
 
 interface RecentOrdersProps {
   pesanans: Pesanan[]
+  loading?: boolean
 }
 
-export default function RecentOrders({ pesanans }: RecentOrdersProps) {
+export default function RecentOrders({ pesanans, loading = false }: RecentOrdersProps) {
   return (
     <Card>
       <CardHeader>
@@ -14,7 +16,14 @@ export default function RecentOrders({ pesanans }: RecentOrdersProps) {
         <CardDescription>Aktivitas pesanan terkini</CardDescription>
       </CardHeader>
       <CardContent>
-        {pesanans.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="flex items-center space-x-3">
+              <Spinner className="text-blue-500" />
+              <p className="text-gray-500 text-sm font-medium">Memuat pesanan...</p>
+            </div>
+          </div>
+        ) : pesanans.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Utensils className="mx-auto h-12 w-12 text-gray-300 mb-4" />
             <p>Belum ada pesanan</p>
