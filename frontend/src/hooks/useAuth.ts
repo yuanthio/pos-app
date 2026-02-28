@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext'
 
 // Custom hook for authentication with additional utilities
 export const useAuthUtils = () => {
-  const { user, isAuthenticated, isLoading, login, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, loginLoading, login, logout } = useAuth()
 
   // Role checking functions
   const isAdmin = () => user?.role === 'admin'
@@ -31,6 +31,7 @@ export const useAuthUtils = () => {
     user,
     isAuthenticated,
     isLoading,
+    loginLoading,
     
     // Auth actions
     login,
