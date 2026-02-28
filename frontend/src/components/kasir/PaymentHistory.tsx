@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Receipt, Download, Calendar, DollarSign, Eye, ChevronLeft, ChevronRight, Grid, List } from 'lucide-react';
+import { Receipt, Download, Calendar, DollarSign, Eye, ChevronLeft, ChevronRight, Grid, List, Loader2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { fetchPaymentHistory } from '@/store/kasirSlice';
 import { useNavigate } from 'react-router-dom';
@@ -65,7 +65,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onViewDetail }) => {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
             <p className="text-muted-foreground">Memuat riwayat pembayaran...</p>
           </div>
         </CardContent>

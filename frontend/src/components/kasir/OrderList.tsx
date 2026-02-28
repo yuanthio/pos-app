@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Clock, CheckCircle, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Clock, CheckCircle, DollarSign, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { fetchKasirOrders } from '@/store/kasirSlice';
@@ -100,7 +100,7 @@ const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
             <p className="text-muted-foreground">Memuat pesanan...</p>
           </div>
         </CardContent>

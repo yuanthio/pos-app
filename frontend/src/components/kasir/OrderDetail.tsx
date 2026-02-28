@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calculator, Receipt, Clock, CheckCircle, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calculator, Receipt, Clock, CheckCircle, DollarSign, Loader2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { fetchKasirOrderDetails, clearCurrentOrder } from '@/store/kasirSlice';
 import type { KasirOrder } from '@/types/kasir';
@@ -64,7 +64,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack }) => {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
             <p className="text-muted-foreground">Memuat detail pesanan...</p>
           </div>
         </CardContent>
