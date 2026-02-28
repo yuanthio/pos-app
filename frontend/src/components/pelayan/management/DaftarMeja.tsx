@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '@/store'
 import { fetchMejas, updateTableStatus, clearError } from '@/store/mejaSlice'
 import type { Meja } from '@/types'
 import { toast } from 'sonner'
 import { Progress } from '@/components/ui/progress'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import MejaStats from './MejaStats'
 import MejaFilters from './MejaFilters'
 import MejaGrid from './MejaGrid'
+import MejaPagination from './MejaPagination'
 import UpdateStatusDialog from './UpdateStatusDialog'
 
 const ITEMS_PER_PAGE = 16;
@@ -117,9 +116,6 @@ export default function DaftarMeja() {
 
         <div className="lg:w-64">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Ringkasan</CardTitle>
-            </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Meja:</span>
@@ -168,49 +164,16 @@ export default function DaftarMeja() {
       />
 
       {/* Pagination Controls */}
-      {paginatedTotalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <div className="text-sm text-muted-foreground">
-            Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredMejas.length)} dari {filteredMejas.length} meja
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: paginatedTotalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  className="w-8 h-8 p-0"
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
-            
-            <Button
-              onClick={handleNextPage}
-              disabled={currentPage === paginatedTotalPages}
-              variant="outline"
-              size="sm"
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <MejaPagination
+        currentPage={currentPage}
+        totalPages={paginatedTotalPages}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalItems={filteredMejas.length}
+        onPageChange={handlePageChange}
+        onPreviousPage={handlePreviousPage}
+        onNextPage={handleNextPage}
+      />
 
       {/* Update Status Dialog */}
       <UpdateStatusDialog

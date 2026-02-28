@@ -39,9 +39,12 @@ export default function OrderDetail() {
   useEffect(() => {
     if (id) {
       void dispatch(fetchOrderDetail(Number(id)))
-      void dispatch(fetchMenuItems()) // Default 10 items dengan pagination
+      // Hanya fetch menu items jika belum ada di state
+      if (menuItems.length === 0) {
+        void dispatch(fetchMenuItems())
+      }
     }
-  }, [dispatch, id])
+  }, [dispatch, id, menuItems.length])
 
   // Show error toast when error occurs but we have currentOrder
   useEffect(() => {
@@ -49,15 +52,6 @@ export default function OrderDetail() {
       toast.error('Terjadi kesalahan: ' + error)
     }
   }, [error, currentOrder])
-
-  // Debug: Log menu items
-  useEffect(() => {
-    console.log('Menu items loaded:', menuItems.length)
-    console.log('Menu items by category:', menuItems.reduce((acc, item) => {
-      acc[item.kategori] = (acc[item.kategori] || 0) + 1
-      return acc
-    }, {} as Record<string, number>))
-  }, [menuItems])
 
   const handleAddItem = async (item: { makanan_id: number; jumlah: number; catatan?: string }) => {
     if (!currentOrder) return
@@ -181,12 +175,14 @@ export default function OrderDetail() {
 
   const canModifyOrder = !!(currentOrder && ['menunggu', 'diproses'].includes(currentOrder.status))
 
-  // Show loading state first
+  // Show loading state
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <div className="text-gray-600">Memuat detail pesanan...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+          <div className="text-gray-600 text-lg">Memuat detail pesanan...</div>
+        </div>
       </div>
     )
   }
@@ -194,7 +190,7 @@ export default function OrderDetail() {
   // Show error state (only if no currentOrder)
   if (error && !currentOrder) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-lg text-red-600">Error: {error}</div>
       </div>
     )
@@ -203,7 +199,7 @@ export default function OrderDetail() {
   // Show not found state (only if not loading and no error and no currentOrder)
   if (!currentOrder) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">Pesanan tidak ditemukan</div>
       </div>
     )

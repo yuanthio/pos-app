@@ -8,6 +8,8 @@ import { useDispatch } from 'react-redux'
 import type { AppDispatch } from '@/store'
 import { createOrder, bookTable } from '@/store/mejaSlice'
 import { toast } from 'sonner'
+import OrderForm from './OrderForm'
+import BookingForm from './BookingForm'
 
 interface MejaCardProps {
   meja: Meja
@@ -305,108 +307,35 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
         )}
 
         {showOrderForm && (
-          <div className="space-y-3 border-t pt-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Nama Pelanggan *
-              </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value)}
-                placeholder="Masukkan nama pelanggan"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            {/* Hanya tampilkan catatan untuk meja yang statusnya 'dipesan' */}
-            {meja.status === 'dipesan' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Catatan:</label>
-                <textarea
-                  value={notes}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
-                  placeholder="Catatan pesanan..."
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
-            
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleCreateOrder}
-                disabled={!customerName.trim()}
-                className="flex-1"
-                size="sm"
-              >
-                Buat Pesanan
-              </Button>
-              <Button 
-                onClick={() => {
-                  setShowOrderForm(false)
-                  setCustomerName('')
-                  setNotes('')
-                }}
-                variant="outline"
-                size="sm"
-              >
-                Batal
-              </Button>
-            </div>
-          </div>
+          <OrderForm
+            customerName={customerName}
+            notes={notes}
+            mejaStatus={meja.status}
+            onCustomerNameChange={setCustomerName}
+            onNotesChange={setNotes}
+            onSubmit={handleCreateOrder}
+            onCancel={() => {
+              setShowOrderForm(false)
+              setCustomerName('')
+              setNotes('')
+            }}
+          />
         )}
 
         {showBookingForm && (
-          <div className="space-y-3 border-t pt-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Nama Pelanggan *
-              </label>
-              <input
-                type="text"
-                value={bookingName}
-                onChange={(e) => setBookingName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Masukkan nama pelanggan"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Catatan Booking (opsional)
-              </label>
-              <textarea
-                value={bookingNotes}
-                onChange={(e) => setBookingNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={2}
-                placeholder="Contoh: Jam 19:00, 4 orang, dll."
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleBookTable}
-                disabled={isBooking || !bookingName.trim()}
-                className="flex-1"
-                size="sm"
-              >
-                {isBooking ? 'Memboking...' : 'Konfirmasi Booking'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowBookingForm(false)
-                  setBookingName('')
-                  setBookingNotes('')
-                }}
-                variant="outline"
-                size="sm"
-              >
-                Batal
-              </Button>
-            </div>
-          </div>
+          <BookingForm
+            bookingName={bookingName}
+            bookingNotes={bookingNotes}
+            isBooking={isBooking}
+            onBookingNameChange={setBookingName}
+            onBookingNotesChange={setBookingNotes}
+            onSubmit={handleBookTable}
+            onCancel={() => {
+              setShowBookingForm(false)
+              setBookingName('')
+              setBookingNotes('')
+            }}
+          />
         )}
       </CardContent>
     </Card>

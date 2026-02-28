@@ -61,17 +61,6 @@ export default function OrderItemList({
     }
   }
 
-  // Debug: Log subtotal types and values
-  useEffect(() => {
-    console.log('Items subtotal debug:', items.map(item => ({
-      id: item.id,
-      nama: item.makanan?.nama,
-      subtotal: item.subtotal,
-      subtotalType: typeof item.subtotal,
-      isNaN: isNaN(item.subtotal)
-    })))
-  }, [items])
-
   return (
     <div className="space-y-3">
       {items.map((item) => (

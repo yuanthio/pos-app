@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
 import type { Meja } from '@/types'
 import { Search } from 'lucide-react'
 import MejaCard from './MejaCard'
@@ -21,8 +22,8 @@ export default function MejaGrid({ mejas, loading, onUpdateStatus, onCreateOrder
     return (
       <Card>
         <CardContent className="p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             <p className="text-gray-600">Memuat data meja...</p>
           </div>
         </CardContent>

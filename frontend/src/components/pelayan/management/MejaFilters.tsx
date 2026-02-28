@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Search, RefreshCw, Filter } from 'lucide-react'
+import { Search, RefreshCw, Filter, Loader2 } from 'lucide-react'
 
 interface MejaFiltersProps {
   searchTerm: string
@@ -56,7 +56,11 @@ export default function MejaFilters({
               variant="outline"
               size="icon"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
