@@ -2,6 +2,35 @@
 
 A modern web-based Point of Sale application built with Laravel (Backend) and React (Frontend) for restaurant and cafe management.
 
+---
+
+## 🚀 Tech Stack
+
+### 🖥️ Frontend
+- **React**
+- **TypeScript**
+- **Redux Toolkit** (State Management)
+- **Tailwind CSS**
+- **shadcn/ui**
+- **Vite**
+
+### ⚙️ Backend
+- **PHP**
+- **Laravel**
+- **Laravel Sanctum** (Authentication)
+- **Laravel DomPDF** (Receipt PDF Generator)
+
+### 🗄️ Database
+- **MySQL**
+
+### 🔐 Authentication
+- **Laravel Sanctum (Token-based API Authentication)**
+
+### 📄 PDF Generation
+- **Laravel DomPDF**
+
+---
+
 ## 📋 Prerequisites
 
 ### Required Software
@@ -17,28 +46,36 @@ A modern web-based Point of Sale application built with Laravel (Backend) and Re
 - **Postman** for API testing
 - **MySQL Workbench** or **phpMyAdmin**
 
+---
+
 ## 🛠️ Installation Guide
 
 ### 1. Clone Repository
+
 ```bash
 git clone https://github.com/yuanthio/pos-app.git
 cd pos-app
 ```
 
-### 2. Backend Installation (Laravel)
+---
 
-#### 2.1 Install Dependencies
+## 2. Backend Installation (Laravel)
+
+### 2.1 Install Dependencies
+
 ```bash
 cd backend
 composer install
 ```
 
-#### 2.2 Environment Configuration
+### 2.2 Environment Configuration
+
 ```bash
 cp .env.example .env
 ```
 
-#### 2.3 Update Environment Variables
+### 2.3 Update Environment Variables
+
 Edit `.env` file with your database and application settings:
 
 ```env
@@ -68,41 +105,55 @@ MAIL_FROM_ADDRESS="hello@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-#### 2.4 Generate Application Key
+### 2.4 Generate Application Key
+
 ```bash
 php artisan key:generate
 ```
 
-#### 2.5 Create Database
+### 2.5 Create Database
+
 ```sql
 CREATE DATABASE pos_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-#### 2.6 Run Migrations
+### 2.6 Run Migrations
+
 ```bash
 php artisan migrate
 ```
 
-#### 2.7 Seed Database 
+### 2.7 Seed Database
+
 ```bash
 php artisan db:seed
 ```
 
-#### 2.8 Start Backend Server
+### 2.8 Start Backend Server
+
 ```bash
 php artisan serve
 ```
-Backend will be available at `http://localhost:8000`
 
-### 3. Frontend Installation (React)
+Backend will be available at:
 
-#### 3.1 Install Dependencies
+```
+http://localhost:8000
+```
+
+---
+
+## 3. Frontend Installation (React + TypeScript)
+
+### 3.1 Install Dependencies
+
 ```bash
 cd ../frontend
 npm install
 ```
 
-#### 3.2 Environment Configuration
+### 3.2 Environment Configuration
+
 Create `.env` file in frontend directory:
 
 ```env
@@ -110,11 +161,19 @@ VITE_API_BASE_URL=http://localhost:8000/api
 VITE_APP_NAME=POS Application
 ```
 
-#### 3.3 Start Frontend Development Server
+### 3.3 Start Frontend Development Server
+
 ```bash
 npm run dev
 ```
-Frontend will be available at `http://localhost:5173`
+
+Frontend will be available at:
+
+```
+http://localhost:5173
+```
+
+---
 
 ## 🗂️ Project Structure
 
@@ -141,9 +200,9 @@ pos-app/
 │   │   ├── migrations/
 │   │   └── seeders/
 │   ├── resources/
-│   │   └── views/
+│   │   └── views/           # PDF Blade Templates
 │   └── ...
-├── frontend/               # React Frontend
+├── frontend/                # React Frontend
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── admin/
@@ -155,19 +214,21 @@ pos-app/
 │   │   │   ├── pelayan/
 │   │   │   ├── kasir/
 │   │   │   └── Login.tsx
-│   │   ├── store/
+│   │   ├── store/           # Redux Toolkit Store
 │   │   ├── utils/
 │   │   ├── types/
 │   │   └── ...
 │   ├── public/
 │   └── ...
-├
 └── .gitignore
 ```
+
+---
 
 ## 🔧 Development Commands
 
 ### Backend Commands
+
 ```bash
 # Start development server
 php artisan serve
@@ -190,7 +251,10 @@ php artisan config:clear
 php artisan route:clear
 ```
 
+---
+
 ### Frontend Commands
+
 ```bash
 # Start development server
 npm run dev
@@ -208,9 +272,12 @@ npm install
 npm install package-name
 ```
 
+---
+
 ## 📝 Environment Variables
 
 ### Backend (.env)
+
 ```env
 APP_NAME=POS Application
 APP_ENV=local
@@ -232,7 +299,10 @@ SESSION_DRIVER=file
 SESSION_LIFETIME=120
 ```
 
+---
+
 ### Frontend (.env)
+
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api
 VITE_APP_NAME=POS Application
