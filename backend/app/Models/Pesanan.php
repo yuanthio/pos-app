@@ -79,7 +79,8 @@ class Pesanan extends Model
     {
         $allowedStatuses = ['menunggu', 'diproses'];
         $statusAllowed = in_array($this->status, $allowedStatuses);
-        $hasItems = $this->detailPesanans()->count() > 0;
+        // Use relation instead of query to avoid N+1
+        $hasItems = $this->detailPesanans->count() > 0;
         
         return $statusAllowed && $hasItems;
     }
