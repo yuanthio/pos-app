@@ -196,15 +196,20 @@ class PelayanController extends Controller
     public function getOrders(): JsonResponse
     {
         $user = request()->user();
-        $pesanans = Pesanan::with(['meja', 'detailPesanans.makanan'])
+        $pesanans = Pesanan::with(['meja:id,nomor_meja,status', 'detailPesanans.makanan:id,nama,kategori,harga,tersedia'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get(['id', 'meja_id', 'user_id', 'nama_pelanggan', 'status', 'total_harga', 'catatan', 'created_at', 'updated_at']);
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => $pesanans
         ]);
+
+        // Cache for 15 seconds to reduce redundant requests
+        $response->header('Cache-Control', 'public, max-age=15');
+
+        return $response;
     }
 
     /**
@@ -257,7 +262,11 @@ class PelayanController extends Controller
             ], 403);
         }
 
-        $pesanan->load(['meja', 'user', 'detailPesanans.makanan']);
+        $pesanan->load([
+            'meja:id,nomor_meja,status',
+            'user:id,name',
+            'detailPesanans.makanan:id,nama,deskripsi,kategori,harga,gambar,tersedia,stok'
+        ]);
 
         return response()->json([
             'success' => true,
