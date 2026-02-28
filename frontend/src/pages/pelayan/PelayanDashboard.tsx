@@ -18,7 +18,7 @@ export default function PelayanDashboard() {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const { statusCount } = useSelector((state: RootState) => state.meja)
-  const { orders } = useSelector((state: RootState) => state.pesanan)
+  const { orders, loading } = useSelector((state: RootState) => state.pesanan)
   
   // Set active tab based on URL parameter, default to 'overview'
   const [activeTab, setActiveTab] = useState<'overview' | 'tables' | 'orders'>(
@@ -70,6 +70,7 @@ export default function PelayanDashboard() {
             <OverviewContent 
               statusCount={statusCount}
               pesanans={orders}
+              loading={loading}
               onNavigateToTab={handleNavigateToTab}
             />
           </TabsContent>
