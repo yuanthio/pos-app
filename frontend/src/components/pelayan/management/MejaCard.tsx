@@ -19,7 +19,6 @@ interface MejaCardProps {
 
 export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUpdate, onDisableTable }: MejaCardProps) {
   const dispatch = useDispatch<AppDispatch>()
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [isBooking, setIsBooking] = useState(false)
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [showBookingForm, setShowBookingForm] = useState(false)
@@ -79,15 +78,13 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
       return
     }
 
-    setIsCreatingOrder(true)
+    // Close form immediately for better UX
+    setShowOrderForm(false)
+    setCustomerName('')
+    setNotes('')
     
     try {
-      // Close form immediately for better UX
-      setShowOrderForm(false)
-      setCustomerName('')
-      setNotes('')
-      
-      // Call API - Redux will handle optimistic updates
+      // Call API - Redux will handle optimistic updates instantly
       await dispatch(createOrder({
         meja_id: meja.id,
         nama_pelanggan: customerName,
@@ -105,8 +102,6 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
       setShowOrderForm(true)
       setCustomerName(customerName)
       setNotes(notes)
-    } finally {
-      setIsCreatingOrder(false)
     }
   }
 
@@ -141,7 +136,6 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
   const isInactive = meja.status === 'tidak_aktif'
   const canUpdateStatus = isBooked && onUpdateStatus
   const canDisableTable = !isBooked && !isOccupied && onDisableTable // Tidak bisa nonaktifkan jika dipesan atau terisi
-  const canActivateTable = isInactive && onDisableTable // Hanya bisa aktifkan jika status tidak aktif
 
   // Handler untuk nonaktifkan meja
   const handleDisableTable = () => {
@@ -150,17 +144,8 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
     }
   }
 
-  // Handler untuk aktifkan meja
-  const handleActivateTable = () => {
-    if (onDisableTable) {
-      onDisableTable(meja) // Reuse same callback but with different status
-    }
-  }
-
   // Handler untuk buat pesanan dari booking (otomatis tanpa form)
   const handleCreateOrderFromBooking = async () => {
-    setIsCreatingOrder(true)
-    
     try {
       // Call API directly with booking data - no form needed
       await dispatch(createOrder({
@@ -174,8 +159,6 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
     } catch (error: any) {
       console.error('Create order from booking failed:', error)
       toast.error(error || 'Gagal membuat pesanan dari booking')
-    } finally {
-      setIsCreatingOrder(false)
     }
   }
 
@@ -245,11 +228,10 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
           <div className="space-y-2">
             <Button 
               onClick={handleCreateOrderFromBooking}
-              disabled={isCreatingOrder}
               className="w-full"
               size="sm"
             >
-              {isCreatingOrder ? 'Membuat Pesanan...' : 'Buat Pesanan'}
+              Buat Pesanan
             </Button>
             {canUpdateStatus && (
               <Button
@@ -298,11 +280,10 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
         {isInactive && (
           <div className="space-y-2">
             <Button 
-              onClick={handleActivateTable}
+              onClick={handleDisableTable}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               size="sm"
             >
-              <Power className="h-4 w-4 mr-2" />
               Aktifkan Meja
             </Button>
           </div>
@@ -355,11 +336,11 @@ export default function MejaCard({ meja, onCreateOrder, onUpdateStatus, onRealUp
             <div className="flex gap-2">
               <Button 
                 onClick={handleCreateOrder}
-                disabled={isCreatingOrder || !customerName.trim()}
+                disabled={!customerName.trim()}
                 className="flex-1"
                 size="sm"
               >
-                {isCreatingOrder ? 'Membuat Pesanan...' : 'Buat Pesanan'}
+                Buat Pesanan
               </Button>
               <Button 
                 onClick={() => {
