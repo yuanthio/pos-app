@@ -11,19 +11,20 @@ interface OverviewContentProps {
     tidak_aktif: number
   }
   pesanans: Pesanan[]
+  loading?: boolean
   onNavigateToTab: (tab: 'tables' | 'orders') => void
 }
 
-export default function OverviewContent({ statusCount, pesanans, onNavigateToTab }: OverviewContentProps) {
+export default function OverviewContent({ statusCount, pesanans, loading = false, onNavigateToTab }: OverviewContentProps) {
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <StatsCards statusCount={statusCount} pesanans={pesanans} />
+      <StatsCards statusCount={statusCount} pesanans={pesanans} loading={loading} />
 
       {/* Quick Actions and Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <QuickActions onNavigateToTab={onNavigateToTab} />
-        <RecentOrders pesanans={pesanans} />
+        <RecentOrders pesanans={pesanans} loading={loading} />
       </div>
     </div>
   )
