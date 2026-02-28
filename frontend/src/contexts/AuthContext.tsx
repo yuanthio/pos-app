@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { authAPI } from '@/lib/api'
 import type { User, AuthContextType, LoginResponse } from '@/types'
+import { toast } from 'sonner'
 
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -11,6 +12,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loginLoading, setLoginLoading] = useState(false)
 
   // Check if user is authenticated on mount
   useEffect(() => {
@@ -54,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Login function
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+    setLoginLoading(true)
     try {
       const response: LoginResponse = await authAPI.login(email, password)
       
@@ -73,8 +76,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, message: response.message }
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed. Please try again.'
-      return { success: false, message }
+      console.error('Login error:', error)
+      
+      // Handle different error types
+      if (error.response?.data?.message) {
+        return { success: false, message: error.response.data.message }
+      } else if (error.response?.data?.errors) {
+        // Handle validation errors
+        const errors = error.response.data.errors
+        const firstError = Object.values(errors)[0] as string
+        return { success: false, message: firstError || 'Validation failed' }
+      } else if (error.message) {
+        return { success: false, message: error.message }
+      } else {
+        return { success: false, message: 'Login failed. Please try again.' }
+      }
+    } finally {
+      setLoginLoading(false)
     }
   }
 
@@ -83,10 +101,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (token) {
         await authAPI.logout()
+        toast.success('Logout berhasil')
       }
     } catch (error) {
       // Continue with logout even if API call fails
       console.error('Logout API call failed:', error)
+      toast.error('Gagal logout dari server, tetapi tetap keluar dari aplikasi')
     } finally {
       // Clear state and storage
       setUser(null)
@@ -103,6 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     token,
     isLoading,
+    loginLoading,
     isAuthenticated,
     login,
     logout,
