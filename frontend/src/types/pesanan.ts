@@ -98,6 +98,7 @@ export interface PesananState {
   currentOrder: Pesanan | null
   loading: boolean
   error: string | null
+  lastFetch: number | null // Add timestamp for caching
 }
 
 export interface PesananFilters {
