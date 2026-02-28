@@ -4,31 +4,36 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Spinner } from '@/components/ui/spinner'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { useAuthUtils } from '@/hooks/useAuth'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   
-  const { login, isLoading } = useAuthUtils()
+  const { login, loginLoading } = useAuthUtils()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
 
     if (!email || !password) {
-      setError('Harap isi semua field')
+      console.log('Validation error: empty fields')
+      toast.error('Harap lengkapi semua field')
       return
     }
 
     try {
+      console.log('Attempting login with:', { email, password: '***' })
       const result = await login(email, password)
+      console.log('Login result:', result)
       
       if (result.success) {
+        toast.success('Login berhasil! Mengalihkan ke dashboard...')
+        
         // Redirect based on user role
         const userRole = JSON.parse(localStorage.getItem('user_data') || '{}').role
         
@@ -46,10 +51,12 @@ export default function LoginPage() {
             navigate('/login')
         }
       } else {
-        setError(result.message)
+        console.log('Login failed:', result.message)
+        toast.error(result.message)
       }
     } catch (error) {
-      setError('Terjadi kesalahan yang tidak terduga. Silakan coba lagi.')
+      console.log('Login error:', error)
+      toast.error('Terjadi kesalahan yang tidak terduga. Silakan coba lagi.')
     }
   }
 
@@ -67,12 +74,6 @@ export default function LoginPage() {
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-            
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email
@@ -86,6 +87,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
+                  disabled={loginLoading}
                   required
                 />
               </div>
@@ -104,12 +106,19 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
+                  disabled={loginLoading}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 focus:outline-none ${
+                    loginLoading 
+                      ? 'text-gray-300 cursor-not-allowed' 
+                      : 'text-gray-400 hover:text-gray-600 cursor-pointer'
+                  }`}
+                  disabled={loginLoading}
+                  tabIndex={loginLoading ? -1 : 0}
                 >
                   {showPassword ? (
                     <EyeOff className="size-4" />
@@ -126,6 +135,7 @@ export default function LoginPage() {
                   type="checkbox"
                   id="remember"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={loginLoading}
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-600">
                   Ingat saya
@@ -133,7 +143,12 @@ export default function LoginPage() {
               </div>
               <a
                 href="#"
-                className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                className={`text-sm font-medium ${
+                  loginLoading
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-blue-600 hover:text-blue-500 cursor-pointer'
+                }`}
+                onClick={(e) => loginLoading && e.preventDefault()}
               >
                 Lupa kata sandi?
               </a>
@@ -141,10 +156,21 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full"
-              disabled={isLoading}
+              className={`w-full transition-all duration-200 ${
+                loginLoading 
+                  ? 'cursor-not-allowed opacity-90' 
+                  : 'cursor-pointer hover:opacity-90'
+              }`}
+              disabled={loginLoading}
             >
-              {isLoading ? 'Sedang masuk...' : 'Masuk'}
+              {loginLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Spinner className="text-white" />
+                  <span>Sedang masuk...</span>
+                </div>
+              ) : (
+                'Masuk'
+              )}
             </Button>
           </form>
 
@@ -153,7 +179,12 @@ export default function LoginPage() {
               Belum punya akun?{' '}
               <a
                 href="#"
-                className="text-blue-600 hover:text-blue-500 font-medium"
+                className={`font-medium ${
+                  loginLoading
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-blue-600 hover:text-blue-500 cursor-pointer'
+                }`}
+                onClick={(e) => loginLoading && e.preventDefault()}
               >
                 Daftar sekarang
               </a>
