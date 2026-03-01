@@ -17,6 +17,8 @@ interface MejaState {
   lastFetch: number | null
 }
 
+type MejaStatus = 'tersedia' | 'terisi' | 'dipesan' | 'tidak_aktif'
+
 const initialState: MejaState = {
   mejas: [],
   statusCount: {
@@ -100,7 +102,7 @@ export const createOrder = createAsyncThunk(
       
       // Replace optimistic pesanan with real data from server
       dispatch(removePesananOptimistically(optimisticPesanan.id))
-      dispatch(addPesananOptimistically(response.data.data))
+      dispatch(addPesananFromServer(response.data.data))
       
       // Sync with pesananSlice state
       dispatch(addOrder(response.data.data))
@@ -126,7 +128,19 @@ export const createOrder = createAsyncThunk(
 
 export const deleteOrderFromMejaSlice = createAsyncThunk(
   'meja/deleteOrder',
-  async (orderId: number, { rejectWithValue, dispatch }) => {
+  async (orderId: number, { rejectWithValue, dispatch, getState }) => {
+    const state = getState() as { meja: MejaState }
+    const pesanan = state.meja.pesanans.find(p => p.id === orderId)
+    const mejaId = pesanan?.meja_id
+    const meja = typeof mejaId === 'number' ? state.meja.mejas.find(m => m.id === mejaId) : undefined
+
+    // Optimistic update - remove order and free the table immediately
+    dispatch(removePesananOptimistically(orderId))
+    if (typeof mejaId === 'number' && meja) {
+      dispatch(updateTableStatusOptimistically({ mejaId, newStatus: 'tersedia' }))
+      dispatch(updateTableBookingInfoOptimistically({ mejaId, nama_pelanggan: null, catatan: null }))
+    }
+
     try {
       const response = await api.delete(`/pelayan/orders/${orderId}`)
       
@@ -135,6 +149,16 @@ export const deleteOrderFromMejaSlice = createAsyncThunk(
       
       return { orderId, ...response.data }
     } catch (error: any) {
+      // Rollback optimistic update on error
+      if (typeof mejaId === 'number' && meja) {
+        dispatch(updateTableStatusOptimistically({ mejaId, newStatus: meja.status as any }))
+        dispatch(updateTableBookingInfoOptimistically({
+          mejaId,
+          nama_pelanggan: meja.nama_pelanggan ?? null,
+          catatan: meja.catatan ?? null,
+        }))
+      }
+
       return rejectWithValue(error.response?.data?.message || 'Failed to delete order')
     }
   }
@@ -142,7 +166,25 @@ export const deleteOrderFromMejaSlice = createAsyncThunk(
 
 export const bookTable = createAsyncThunk(
   'meja/bookTable',
-  async ({ mejaId, namaPelanggan, catatan }: { mejaId: number; namaPelanggan: string; catatan?: string }, { rejectWithValue }) => {
+  async (
+    { mejaId, namaPelanggan, catatan }: { mejaId: number; namaPelanggan: string; catatan?: string },
+    { rejectWithValue, dispatch, getState }
+  ) => {
+    const state = getState() as { meja: MejaState }
+    const meja = state.meja.mejas.find(m => m.id === mejaId)
+
+    if (!meja) {
+      return rejectWithValue('Meja tidak ditemukan')
+    }
+
+    // Optimistic update - update UI immediately
+    dispatch(updateTableStatusOptimistically({ mejaId, newStatus: 'dipesan' }))
+    // Set booking info immediately so it shows up in UI
+    dispatch(updateTableBookingInfoOptimistically({
+      mejaId,
+      nama_pelanggan: namaPelanggan,
+      catatan: catatan ?? null,
+    }))
     try {
       const response = await api.put(`/pelayan/tables/${mejaId}/book`, {
         nama_pelanggan: namaPelanggan,
@@ -151,6 +193,13 @@ export const bookTable = createAsyncThunk(
       
       return { mejaId, ...response.data }
     } catch (error: any) {
+      // Rollback optimistic update on error
+      dispatch(updateTableStatusOptimistically({ mejaId, newStatus: meja.status as any }))
+      dispatch(updateTableBookingInfoOptimistically({
+        mejaId,
+        nama_pelanggan: meja.nama_pelanggan ?? null,
+        catatan: meja.catatan ?? null,
+      }))
       return rejectWithValue(error.response?.data?.message || 'Failed to book table')
     }
   }
@@ -225,11 +274,15 @@ const mejaSlice = createSlice({
       // Increment unread orders count
       state.unreadOrdersCount += 1
     },
+    addPesananFromServer: (state, action: PayloadAction<Pesanan>) => {
+      // Tambahkan pesanan dari server tanpa menaikkan unread count lagi
+      state.pesanans.unshift(action.payload)
+    },
     removePesananOptimistically: (state, action: PayloadAction<number>) => {
       // Hapus pesanan berdasarkan ID
       state.pesanans = state.pesanans.filter(p => p.id !== action.payload)
     },
-    updateTableStatusOptimistically: (state, action: PayloadAction<{ mejaId: number; newStatus: 'tersedia' | 'terisi' | 'dipesan' | 'tidak_aktif' }>) => {
+    updateTableStatusOptimistically: (state, action: PayloadAction<{ mejaId: number; newStatus: MejaStatus }>) => {
       const { mejaId, newStatus } = action.payload
       const mejaIndex = state.mejas.findIndex(m => m.id === mejaId)
       if (mejaIndex !== -1) {
@@ -247,6 +300,18 @@ const mejaSlice = createSlice({
         // Update status count
         state.statusCount[oldStatus as keyof MejaStatusCount] -= 1
         state.statusCount[newStatus as keyof MejaStatusCount] += 1
+      }
+    },
+    updateTableBookingInfoOptimistically: (
+      state,
+      action: PayloadAction<{ mejaId: number; nama_pelanggan: string | null; catatan: string | null }>
+    ) => {
+      const { mejaId, nama_pelanggan, catatan } = action.payload
+      const mejaIndex = state.mejas.findIndex(m => m.id === mejaId)
+
+      if (mejaIndex !== -1) {
+        state.mejas[mejaIndex].nama_pelanggan = nama_pelanggan
+        state.mejas[mejaIndex].catatan = catatan
       }
     },
     // New reducers for unread orders management
@@ -290,6 +355,20 @@ const mejaSlice = createSlice({
         // Logic sudah dipindahkan ke optimistic update di thunk
       })
       .addCase(createOrder.rejected, (state, action) => {
+        state.error = action.payload as string
+        // Rollback sudah dilakukan di thunk
+      })
+
+    // Book Table
+    builder
+      .addCase(bookTable.pending, (state) => {
+        // Hapus loading state untuk pure optimistic update
+        state.error = null
+      })
+      .addCase(bookTable.fulfilled, () => {
+        // UI sudah ter-update via optimistic update; tidak perlu overwrite state
+      })
+      .addCase(bookTable.rejected, (state, action) => {
         state.error = action.payload as string
         // Rollback sudah dilakukan di thunk
       })
@@ -346,30 +425,6 @@ const mejaSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      .addCase(bookTable.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(bookTable.fulfilled, (state, action) => {
-        state.loading = false
-        // Update table status optimistically
-        const { mejaId } = action.payload
-        const mejaIndex = state.mejas.findIndex(m => m.id === mejaId)
-        if (mejaIndex !== -1) {
-          const oldStatus = state.mejas[mejaIndex].status
-          state.mejas[mejaIndex] = action.payload.data
-          
-          // Update status count
-          if (oldStatus !== action.payload.data.status) {
-            state.statusCount[oldStatus as keyof MejaStatusCount] -= 1
-            state.statusCount[action.payload.data.status as keyof MejaStatusCount] += 1
-          }
-        }
-      })
-      .addCase(bookTable.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload as string
-      })
   }
 })
 
@@ -377,8 +432,10 @@ export const {
   clearError, 
   clearCreateOrderLoading, 
   addPesananOptimistically, 
+  addPesananFromServer,
   removePesananOptimistically, 
   updateTableStatusOptimistically,
+  updateTableBookingInfoOptimistically,
   markOrdersAsRead,
   incrementUnreadOrders,
   removePesananFromMejaSlice
