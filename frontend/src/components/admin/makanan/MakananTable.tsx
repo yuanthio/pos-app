@@ -1,6 +1,7 @@
 import { Eye, EyeOff, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
   TableBody,
@@ -57,7 +58,10 @@ export function MakananTable({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <Spinner className="size-8 text-blue-600 mx-auto mb-2" />
+          <p className="text-muted-foreground">Memuat data makanan...</p>
+        </div>
       </div>
     )
   }
