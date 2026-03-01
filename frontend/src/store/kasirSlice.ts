@@ -166,14 +166,18 @@ const kasirSlice = createSlice({
       })
       .addCase(closeOrder.fulfilled, (state, action) => {
         state.paymentLoading = false;
-        // Update order in list
-        const index = state.orders.findIndex(order => order.id === action.payload.order.id);
-        if (index !== -1) {
-          state.orders[index] = action.payload.order;
-        }
+        // Remove from active orders list (paid orders should move to history)
+        state.orders = state.orders.filter(order => order.id !== action.payload.order.id);
+
         // Update current order
         if (state.currentOrder && state.currentOrder.id === action.payload.order.id) {
           state.currentOrder = action.payload.order;
+        }
+
+        // Add to payment history immediately (avoid requiring page reload)
+        const existsInHistory = state.paymentHistory.some(o => o.id === action.payload.order.id);
+        if (!existsInHistory) {
+          state.paymentHistory.unshift(action.payload.order as any);
         }
       })
       .addCase(closeOrder.rejected, (state, action) => {
