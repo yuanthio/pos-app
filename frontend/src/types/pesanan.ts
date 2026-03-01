@@ -31,6 +31,11 @@ export interface Pesanan {
     email: string
   }
   detail_pesanans?: DetailPesanan[]
+  // Payment history fields
+  total_with_tax_service?: number
+  tax_amount?: number
+  service_amount?: number
+  subtotal_amount?: number
 }
 
 export interface AddItemRequest {
