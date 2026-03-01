@@ -43,34 +43,9 @@ export default function AdminDashboard() {
     window.location.href = '/login'
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchDashboardData}>Coba Lagi</Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!dashboardData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Tidak ada data dashboard tersedia</p>
-      </div>
-    )
-  }
-
-  const { stats, recent_users, users_by_role } = dashboardData.data
+  const stats = dashboardData?.data?.stats
+  const recent_users = dashboardData?.data?.recent_users
+  const users_by_role = dashboardData?.data?.users_by_role
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -83,20 +58,37 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={fetchDashboardData}>Coba Lagi</Button>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
-        <StatsCards stats={stats} />
+        {stats && <StatsCards stats={stats} />}
 
         {/* Additional Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <UsersByRoleCard usersByRole={users_by_role} />
-          <UserStatusCard 
-            activeUsers={stats.active_users} 
-            inactiveUsers={stats.inactive_users} 
-          />
-        </div>
+        {stats && users_by_role && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <UsersByRoleCard usersByRole={users_by_role} />
+            <UserStatusCard 
+              activeUsers={stats.active_users} 
+              inactiveUsers={stats.inactive_users} 
+            />
+          </div>
+        )}
 
         {/* Recent Users */}
-        <RecentUsersCard recentUsers={recent_users} />
+        {recent_users && <RecentUsersCard recentUsers={recent_users} />}
+
+        {loading && !dashboardData && (
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </main>
     </div>
   )
