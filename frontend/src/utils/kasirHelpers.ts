@@ -161,26 +161,62 @@ export const handleApiError = (error: any): string => {
 
 export const downloadReceipt = async (orderId: number): Promise<void> => {
   try {
-    const response = await fetch(`/api/kasir/orders/${orderId}/receipt/download`, {
+    // Gunakan API instance yang sama dengan yang lain
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+    const token = localStorage.getItem('auth_token'); // Gunakan auth_token yang konsisten
+    
+    const response = await fetch(`${apiBase}/kasir/orders/${orderId}/receipt/download`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/pdf',
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      throw new Error('Gagal mengunduh struk');
+      const errorText = await response.text();
+      console.error('Download failed:', response.status, errorText);
+      throw new Error(`Gagal mengunduh struk: ${response.status}`);
+    }
+
+    // Cek content type untuk memastikan PDF
+    const contentType = response.headers.get('content-type');
+    console.log('Response content type:', contentType);
+    
+    if (!contentType || !contentType.includes('application/pdf')) {
+      console.error('Invalid content type:', contentType);
+      throw new Error('Server tidak mengembalikan file PDF');
     }
 
     const blob = await response.blob();
+    
+    // Validasi blob
+    if (blob.size === 0) {
+      throw new Error('File PDF kosong');
+    }
+    
+    console.log('PDF blob size:', blob.size, 'bytes');
+    
+    // Buat URL dan download
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `Struk_Pesanan_${orderId}_${new Date().toISOString().split('T')[0]}.pdf`;
+    a.style.display = 'none';
     document.body.appendChild(a);
+    
+    // Trigger download
     a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    
+    // Cleanup
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 100);
+    
+    console.log('Download completed successfully');
+    
   } catch (error) {
     console.error('Download receipt error:', error);
     throw error;
