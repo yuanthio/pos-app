@@ -1,19 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuthUtils } from '@/hooks/useAuth';
-import { LogOut, ShoppingCart, DollarSign, Users, TrendingUp, List, History, Receipt } from 'lucide-react';
-import OrderList from '@/components/kasir/OrderList';
-import OrderDetail from '@/components/kasir/OrderDetail';
-import PaymentHistory from '@/components/kasir/PaymentHistory';
+import { useState, useEffect } from 'react';
+import KasirHeader from '@/components/kasir/KasirHeader';
+import KasirStats from '@/components/kasir/KasirStats';
+import KasirTabs from '@/components/kasir/KasirTabs';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { fetchKasirOrders, fetchPaymentHistory } from '@/store/kasirSlice';
-import { formatCurrency } from '@/utils/kasirHelpers';
 import type { KasirOrder } from '@/types/kasir';
 
 export default function KasirDashboard() {
-  const { getDisplayName, getRoleDisplay, logout } = useAuthUtils();
   const [selectedOrder, setSelectedOrder] = useState<KasirOrder | null>(null);
   const [activeTab, setActiveTab] = useState('orders');
   const dispatch = useAppDispatch();
@@ -69,9 +62,9 @@ export default function KasirDashboard() {
   }, [dispatch, orders.length, paymentHistory.length]);
 
   const handleLogout = async () => {
-    await logout();
-    window.location.href = '/login';
-  };
+  // Simple logout - redirect to login
+  window.location.href = '/login';
+};
 
   const handleSelectOrder = (order: KasirOrder) => {
     setSelectedOrder(order);
@@ -90,130 +83,28 @@ export default function KasirDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Kasir Dashboard</h1>
-              <p className="text-sm text-gray-500">Welcome, {getDisplayName()}</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 bg-blue-100 px-3 py-1 rounded-full">
-                {getRoleDisplay()}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogout}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Sticky Header */}
+      <KasirHeader onLogout={handleLogout} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Pesanan</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">Hari ini</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendapatan Hari Ini</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(stats.todayRevenue)}
-              </div>
-              <p className="text-xs text-muted-foreground">Dari {stats.paidOrders} transaksi</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pesanan Dibayar</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.paidOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalOrders > 0 ? Math.round((stats.paidOrders / stats.totalOrders) * 100) : 0}% dari total
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pelanggan</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.uniqueCustomers}</div>
-              <p className="text-xs text-muted-foreground">Unik hari ini</p>
-            </CardContent>
-          </Card>
-        </div>
+        <KasirStats
+          totalOrders={stats.totalOrders}
+          todayRevenue={stats.todayRevenue}
+          paidOrders={stats.paidOrders}
+          uniqueCustomers={stats.uniqueCustomers}
+        />
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-200">
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              Pesanan
-            </TabsTrigger>
-            <TabsTrigger value="detail" className="flex items-center gap-2" disabled={!selectedOrder}>
-              <Receipt className="h-4 w-4" />
-              Detail
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Riwayat
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="orders" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Daftar Pesanan</h2>
-              <p className="text-muted-foreground">Pesanan yang siap untuk dibayar</p>
-            </div>
-            <OrderList onSelectOrder={handleSelectOrder} />
-          </TabsContent>
-
-          <TabsContent value="detail" className="space-y-6">
-            {selectedOrder ? (
-              <OrderDetail order={selectedOrder} onBack={handleBackToOrders} />
-            ) : (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                  <p className="text-muted-foreground">Pilih pesanan untuk melihat detail</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Riwayat Pembayaran</h2>
-              <p className="text-muted-foreground">Semua transaksi yang telah selesai</p>
-            </div>
-            <PaymentHistory onViewDetail={handleViewHistoryDetail} />
-          </TabsContent>
-        </Tabs>
+        <KasirTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          selectedOrder={selectedOrder}
+          onSelectOrder={handleSelectOrder}
+          onViewHistoryDetail={handleViewHistoryDetail}
+          onBackToOrders={handleBackToOrders}
+        />
       </main>
     </div>
   );
