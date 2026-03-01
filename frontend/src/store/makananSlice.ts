@@ -15,6 +15,10 @@ interface MakananState {
   loading: boolean
   error: string | null
   filters: MakananParams
+  // Specific loading states for optimistic updates
+  creating: boolean
+  updating: boolean
+  deleting: boolean
 }
 
 const initialState: MakananState = {
@@ -32,6 +36,10 @@ const initialState: MakananState = {
     page: 1,
     per_page: 10,
   },
+  // Specific loading states for optimistic updates
+  creating: false,
+  updating: false,
+  deleting: false,
 }
 
 // Async thunks
@@ -100,6 +108,21 @@ const makananSlice = createSlice({
         per_page: 10,
       }
     },
+    // Optimistic update reducers
+    addMakananOptimistic: (state, action: PayloadAction<Makanan>) => {
+      state.makanans.unshift(action.payload)
+      state.pagination.total += 1
+    },
+    updateMakananOptimistic: (state, action: PayloadAction<Makanan>) => {
+      const index = state.makanans.findIndex(m => m.id === action.payload.id)
+      if (index !== -1) {
+        state.makanans[index] = action.payload
+      }
+    },
+    removeMakananOptimistic: (state, action: PayloadAction<number>) => {
+      state.makanans = state.makanans.filter(m => m.id !== action.payload)
+      state.pagination.total -= 1
+    },
   },
   extraReducers: (builder) => {
     // Fetch makanans
@@ -127,50 +150,67 @@ const makananSlice = createSlice({
     // Create makanan
     builder
       .addCase(createMakanan.pending, (state) => {
-        state.loading = true
+        state.creating = true
         state.error = null
       })
       .addCase(createMakanan.fulfilled, (state, action: PayloadAction<SingleMakananResponse>) => {
-        state.loading = false
-        state.makanans.unshift(action.payload.data)
-        state.pagination.total += 1
+        state.creating = false
+        // Update with actual server response
+        const index = state.makanans.findIndex(m => m.id === action.payload.data.id)
+        if (index !== -1) {
+          // Update existing optimistic item with server data
+          state.makanans[index] = action.payload.data
+        } else {
+          // Find optimistic item by checking if it's a temporary ID (large number)
+          const optimisticIndex = state.makanans.findIndex(m => 
+            m.id >= 1000000000000 && m.nama === action.payload.data.nama
+          )
+          if (optimisticIndex !== -1) {
+            // Replace optimistic item with server data
+            state.makanans[optimisticIndex] = action.payload.data
+          } else {
+            // Fallback: add new item if no optimistic item found
+            state.makanans.unshift(action.payload.data)
+            state.pagination.total += 1
+          }
+        }
       })
       .addCase(createMakanan.rejected, (state, action) => {
-        state.loading = false
+        state.creating = false
         state.error = action.error.message || 'Failed to create makanan'
       })
 
     // Update makanan
     builder
       .addCase(updateMakanan.pending, (state) => {
-        state.loading = true
+        state.updating = true
         state.error = null
       })
       .addCase(updateMakanan.fulfilled, (state, action: PayloadAction<SingleMakananResponse>) => {
-        state.loading = false
+        state.updating = false
         const index = state.makanans.findIndex(m => m.id === action.payload.data.id)
         if (index !== -1) {
           state.makanans[index] = action.payload.data
         }
       })
       .addCase(updateMakanan.rejected, (state, action) => {
-        state.loading = false
+        state.updating = false
         state.error = action.error.message || 'Failed to update makanan'
       })
 
     // Delete makanan
     builder
       .addCase(deleteMakanan.pending, (state) => {
-        state.loading = true
+        state.deleting = true
         state.error = null
       })
       .addCase(deleteMakanan.fulfilled, (state, action: PayloadAction<number>) => {
-        state.loading = false
+        state.deleting = false
         state.makanans = state.makanans.filter(m => m.id !== action.payload)
         state.pagination.total -= 1
       })
       .addCase(deleteMakanan.rejected, (state, action) => {
-        state.loading = false
+        state.deleting = false
         state.error = action.error.message || 'Failed to delete makanan'
       })
 
@@ -188,5 +228,12 @@ const makananSlice = createSlice({
   },
 })
 
-export const { setFilters, clearError, resetFilters } = makananSlice.actions
+export const { 
+  setFilters, 
+  clearError, 
+  resetFilters,
+  addMakananOptimistic,
+  updateMakananOptimistic,
+  removeMakananOptimistic
+} = makananSlice.actions
 export default makananSlice.reducer
