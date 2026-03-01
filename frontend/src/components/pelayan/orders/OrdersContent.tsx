@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux'
 import { toast } from 'sonner'
 import type { Pesanan } from '@/types'
 import type { AppDispatch } from '@/store'
-import { deleteOrder } from '@/store/pesananSlice'
+import { deleteOrderFromMejaSlice } from '@/store/mejaSlice'
 import OrdersListView from './OrdersListView'
 import OrdersGridView from './OrdersGridView'
 import OrdersPagination from './OrdersPagination'
@@ -57,14 +57,11 @@ export default function OrdersContent({ pesanans, loading = false }: OrdersConte
     try {
       // Optimistic update - remove from UI immediately
       dispatch({ type: 'pesanan/removeOrder', payload: orderToDelete.id })
-      dispatch({ type: 'meja/removePesananFromMejaSlice', payload: orderToDelete.id })
+      await dispatch(deleteOrderFromMejaSlice(orderToDelete.id)).unwrap()
       
       // Close dialog immediately
       setDeleteDialogOpen(false)
       setOrderToDelete(null)
-      
-      // Call API in background
-      await dispatch(deleteOrder(orderToDelete.id)).unwrap()
       
       // Success toast
       toast.success('Pesanan berhasil dihapus!', { id: toastId })
