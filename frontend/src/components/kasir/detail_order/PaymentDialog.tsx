@@ -57,6 +57,10 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const paymentDetails = calculatePaymentDetails(order?.total_harga || 0);
   const paymentAmount = parseFloat(formData.payment_amount) || 0;
   const change = paymentAmount - paymentDetails.total;
+  
+  // Check if payment amount is sufficient
+  const isPaymentSufficient = paymentAmount >= paymentDetails.total;
+  const isFormValid = isPaymentSufficient && formData.payment_amount !== '' && !isNaN(paymentAmount);
 
   useEffect(() => {
     if (order) {
@@ -265,10 +269,15 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                   placeholder="0"
                   value={formData.payment_amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, payment_amount: e.target.value }))}
-                  className="text-lg font-semibold"
+                  className={`text-lg font-semibold ${!isPaymentSufficient && formData.payment_amount !== '' ? 'border-red-500 focus:border-red-500' : ''}`}
                 />
                 {errors.payment_amount && (
                   <p className="text-sm text-red-600">{errors.payment_amount}</p>
+                )}
+                {!isPaymentSufficient && formData.payment_amount !== '' && (
+                  <p className="text-sm text-red-600">
+                    Nominal pembayaran kurang {formatCurrency(paymentDetails.total - paymentAmount)}
+                  </p>
                 )}
               </div>
             </div>
@@ -321,7 +330,7 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
             <Button
               type="submit"
               className="bg-green-600 hover:bg-green-700"
-              disabled={paymentLoading || receiptLoading}
+              disabled={paymentLoading || receiptLoading || !isFormValid}
             >
               {paymentLoading || receiptLoading ? (
                 <>
