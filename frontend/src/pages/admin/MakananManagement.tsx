@@ -5,7 +5,7 @@ import { AdminHeader } from '@/components/admin/AdminHeader'
 import { MakananList } from '@/components/admin/makanan'
 import { fetchMakanans, fetchCategories, setFilters, clearError } from '@/store/makananSlice'
 import type { AppDispatch, RootState } from '@/store'
-import type { MakananParams } from '@/types'
+import type { MakananParams, Makanan } from '@/types'
 import { useAuthUtils } from '@/hooks/useAuth'
 
 export default function MakananManagement() {
@@ -14,9 +14,13 @@ export default function MakananManagement() {
   const { getDisplayName, getRoleDisplay, logout } = useAuthUtils()
 
   useEffect(() => {
-    dispatch(fetchMakanans(filters))
+    // Only fetch data on initial load, not on filter changes
+    if (makanans.length === 0) {
+      // Fetch all data without pagination for client-side filtering
+      dispatch(fetchMakanans({ page: 1, per_page: 1000 })) // Fetch all data
+    }
     dispatch(fetchCategories())
-  }, [dispatch, filters])
+  }, [dispatch]) // Remove filters dependency
 
   const handleFilterChange = (newFilters: Partial<MakananParams>) => {
     dispatch(setFilters(newFilters))
@@ -27,8 +31,23 @@ export default function MakananManagement() {
   }
 
   const handleRefresh = () => {
-    dispatch(fetchMakanans(filters))
+    dispatch(fetchMakanans({ page: 1, per_page: 1000 })) // Fetch all data
     toast.success('Data berhasil diperbarui!')
+  }
+
+  const handleEdit = (makanan: Makanan) => {
+    // Edit functionality will be handled by MakananList component
+    console.log('Edit makanan:', makanan)
+  }
+
+  const handleDelete = (id: number) => {
+    // Delete functionality will be handled by MakananList component
+    console.log('Delete makanan:', id)
+  }
+
+  const handleToggleAvailability = (id: number) => {
+    // Toggle availability will be handled by MakananList component
+    console.log('Toggle availability:', id)
   }
 
   const handleClearError = () => {
@@ -100,6 +119,9 @@ export default function MakananManagement() {
           onFilterChange={handleFilterChange}
           onPageChange={handlePageChange}
           onRefresh={handleRefresh}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggleAvailability={handleToggleAvailability}
         />
       </main>
     </div>
