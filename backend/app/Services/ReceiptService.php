@@ -12,18 +12,23 @@ class ReceiptService
      */
     public function generateReceipt(Pesanan $pesanan, array $paymentData)
     {
+        $pesananWithRelations = Pesanan::with(['detailPesanans.makanan', 'user', 'meja'])
+            ->find($pesanan->id);
+
         $data = [
-            'pesanan' => $pesanan,
+            'pesanan' => $pesananWithRelations,
             'payment' => $paymentData,
             'restaurant' => $this->getRestaurantInfo(),
             'date' => now()->format('d F Y H:i:s')
         ];
 
         $pdf = Pdf::loadView('receipts.order', $data);
-        
-        // Set paper size and orientation
-        $pdf->setPaper([0, 0, 226.77, 850.39], 'portrait'); // 80mm width
-        
+
+        // PERBAIKAN: Gunakan format array [width, height] dalam point (1mm = 2.83pt)
+        // 80mm = 226.77pt. Tinggi kita buat dinamis atau secukupnya (misal: 400pt-500pt)
+        // Untuk struk thermal, biasanya kita set tinggi yang sangat pas.
+        $pdf->setPaper([0, 0, 226.77, 500], 'portrait');
+
         return $pdf;
     }
 
