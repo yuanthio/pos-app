@@ -45,11 +45,11 @@ export default function PaymentHistoryListView({
                     <span className="font-medium">Meja:</span> {order.meja?.nomor_meja || 'Take Away'}
                   </div>
                   <div>
-                    <span className="font-medium">Total:</span> {formatCurrency(order.total_harga)}
+                    <span className="font-medium">Total:</span> {formatCurrency(order.total_with_tax_service || order.total_harga)}
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {formatDate(order.created_at)}

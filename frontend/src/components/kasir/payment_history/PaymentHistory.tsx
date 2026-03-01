@@ -8,6 +8,7 @@ import { fetchPaymentHistory } from '@/store/kasirSlice';
 import { useNavigate } from 'react-router-dom';
 import type { Pesanan } from '@/types/pesanan';
 import { formatCurrency, formatDate, downloadReceipt } from '@/utils/kasirHelpers';
+import { toast } from 'sonner';
 import PaymentHistoryViewToggle from './PaymentHistoryViewToggle';
 import PaymentHistoryListView from './PaymentHistoryListView';
 import PaymentHistoryGridView from './PaymentHistoryGridView';
@@ -58,9 +59,12 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onViewDetail }) => {
 
   const handleDownloadReceipt = async (orderId: number) => {
     try {
+      toast.loading('Mengunduh struk...', { id: 'download-receipt' });
       await downloadReceipt(orderId);
-    } catch (error) {
+      toast.success('Struk berhasil diunduh!', { id: 'download-receipt' });
+    } catch (error: any) {
       console.error('Download receipt failed:', error);
+      toast.error(error.message || 'Gagal mengunduh struk', { id: 'download-receipt' });
     }
   };
 
