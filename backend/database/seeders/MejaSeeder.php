@@ -15,32 +15,16 @@ class MejaSeeder extends Seeder
     {
         $mejas = [];
         
-        // Generate 24 tables
+        // Generate 24 tables - all available by default
         for ($i = 1; $i <= 24; $i++) {
             $mejas[] = [
                 'nomor_meja' => 'Meja ' . $i,
-                'status' => 'tersedia',
+                'status' => 'tersedia', // All tables available by default
                 'kapasitas' => 4,
                 'catatan' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
-        }
-
-        // Set some tables as occupied for testing
-        $occupiedTables = [3, 7, 12, 15, 18, 22]; // Table numbers that are occupied
-        foreach ($occupiedTables as $tableNum) {
-            if (isset($mejas[$tableNum - 1])) {
-                $mejas[$tableNum - 1]['status'] = 'terisi';
-            }
-        }
-
-        // Set some tables as being cleaned
-        $cleaningTables = [5, 10]; // Table numbers being cleaned
-        foreach ($cleaningTables as $tableNum) {
-            if (isset($mejas[$tableNum - 1])) {
-                $mejas[$tableNum - 1]['status'] = 'dipesan';
-            }
         }
 
         DB::table('mejas')->insert($mejas);
