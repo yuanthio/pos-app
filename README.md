@@ -31,7 +31,7 @@ A modern web-based Point of Sale application built with Laravel (Backend) and Re
 
 ---
 
-## � Login Credentials
+## Login Credentials
 
 ### Default Login Accounts
 
@@ -49,7 +49,7 @@ A modern web-based Point of Sale application built with Laravel (Backend) and Re
 
 ---
 
-## �📋 Prerequisites
+## 📋 Prerequisites
 
 ### Required Software
 - **PHP** >= 8.1
