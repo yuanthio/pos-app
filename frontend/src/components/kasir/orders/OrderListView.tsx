@@ -55,7 +55,7 @@ export default function OrderListView({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {formatDate(order.created_at)}
