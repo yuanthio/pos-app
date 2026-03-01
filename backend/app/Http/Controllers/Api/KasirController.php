@@ -357,6 +357,22 @@ class KasirController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(20);
 
+        // Calculate total with tax and service for each order
+        $orders->getCollection()->transform(function ($order) {
+            $subtotal = $order->detailPesanans->sum('subtotal');
+            $tax = $subtotal * 0.1; // 10% tax
+            $service = $subtotal * 0.05; // 5% service
+            $total_with_tax_service = $subtotal + $tax + $service;
+            
+            // Add calculated total to order
+            $order->total_with_tax_service = $total_with_tax_service;
+            $order->tax_amount = $tax;
+            $order->service_amount = $service;
+            $order->subtotal_amount = $subtotal;
+            
+            return $order;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $orders,
