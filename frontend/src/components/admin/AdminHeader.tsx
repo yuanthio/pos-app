@@ -17,7 +17,7 @@ export function AdminHeader({ userName, userRole, onLogout }: AdminHeaderProps) 
   const menuItems = [
     {
       label: 'Dashboard',
-      href: '/admin',
+      href: '/admin/dashboard',
       description: 'Overview dan statistik'
     },
     {
@@ -34,8 +34,8 @@ export function AdminHeader({ userName, userRole, onLogout }: AdminHeaderProps) 
 
   // Check if menu item is active
   const isMenuItemActive = (href: string) => {
-    if (href === '/admin') {
-      return location.pathname === href || location.pathname === '/'
+    if (href === '/admin/dashboard') {
+      return location.pathname === href || location.pathname === '/admin'
     }
     return location.pathname.startsWith(href)
   }
@@ -99,7 +99,7 @@ export function AdminHeader({ userName, userRole, onLogout }: AdminHeaderProps) 
               onClick={onLogout}
               className="flex items-center gap-2"
             >
-              <LogOut className="size-4" />
+              <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
