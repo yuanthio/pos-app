@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { fetchKasirOrderDetails, clearCurrentOrder } from '@/store/kasirSlice';
 import type { KasirOrder } from '@/types/kasir';
@@ -21,7 +19,7 @@ interface OrderDetailProps {
 
 const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack }) => {
   const dispatch = useAppDispatch();
-  const { currentOrder, loading } = useAppSelector((state) => state.kasir);
+  const { currentOrder } = useAppSelector((state) => state.kasir);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   useEffect(() => {
@@ -35,22 +33,8 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack }) => {
   const orderData = currentOrder || order;
 
   const handlePaymentSuccess = () => {
-    // Refresh order details after payment
-    dispatch(fetchKasirOrderDetails(order.id));
+    // Do not refetch here; kasirSlice.closeOrder already updates currentOrder optimistically.
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-            <p className="text-muted-foreground">Memuat detail pesanan...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
