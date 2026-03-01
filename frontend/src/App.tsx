@@ -20,10 +20,19 @@ function App() {
             
             {/* Protected Routes */}
             <Route 
-              path="/admin" 
+              path="/admin/dashboard" 
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Navigate to="/admin/dashboard" replace />
                 </ProtectedRoute>
               } 
             />
