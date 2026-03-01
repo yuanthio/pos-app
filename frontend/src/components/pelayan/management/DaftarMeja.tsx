@@ -159,7 +159,7 @@ export default function DaftarMeja() {
         mejas={paginatedMejas}
         loading={loading}
         onUpdateStatus={handleUpdateStatus}
-        onCreateOrder={() => dispatch(fetchMejas())}
+        onCreateOrder={() => undefined}
         onDisableTable={handleDisableTable}
       />
 
