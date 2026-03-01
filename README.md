@@ -31,7 +31,25 @@ A modern web-based Point of Sale application built with Laravel (Backend) and Re
 
 ---
 
-## 📋 Prerequisites
+## � Login Credentials
+
+### Default Login Accounts
+
+#### 👨‍💼 Admin
+- **Email:** `admin@pos.com`
+- **Password:** `password`
+
+#### 🧑 Kasir
+- **Email:** `kasir1@pos.com`
+- **Password:** `password`
+
+#### 🧍 Pelayan
+- **Email:** `pelayan1@pos.com`
+- **Password:** `password`
+
+---
+
+## �📋 Prerequisites
 
 ### Required Software
 - **PHP** >= 8.1
