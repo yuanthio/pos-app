@@ -1,41 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
-import type { AppDispatch } from '@/store'
 import { toast } from 'sonner'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  RefreshCw,
-  Filter
-} from 'lucide-react'
 import { MakananForm } from './MakananForm'
-import { deleteMakanan, toggleAvailability } from '@/store/makananSlice'
+import { MakananFilters } from './MakananFilters'
+import { MakananTable } from './MakananTable'
+import { MakananDeleteDialog } from './MakananDeleteDialog'
+import { MakananPagination } from './MakananPagination'
+import { deleteMakanan, toggleAvailability, updateMakananOptimistic } from '@/store/makananSlice'
+import { filterMakanans, paginateResults } from '@/utils/makananFilter'
+import type { AppDispatch } from '@/store'
 import type { Makanan, MakananParams } from '@/types'
 
 interface MakananListProps {
@@ -54,50 +28,56 @@ interface MakananListProps {
   onRefresh: () => void
 }
 
-export function MakananList({
-  makanans,
+export function MakananList({ 
+  makanans: allMakanans,
   pagination,
   loading,
-  filters,
+  filters, 
   categories,
-  onFilterChange,
-  onPageChange,
+  onFilterChange, 
+  onPageChange, 
   onRefresh,
 }: MakananListProps) {
   const dispatch = useDispatch<AppDispatch>()
   const [showForm, setShowForm] = useState(false)
   const [editingMakanan, setEditingMakanan] = useState<Makanan | null>(null)
-  const [searchTerm, setSearchTerm] = useState(filters.search || '')
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number; nama: string }>({
     open: false,
     id: 0,
     nama: ''
   })
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value)
-    onFilterChange({ search: value, page: 1 })
-  }
+  // Client-side filtering with useMemo for instant results
+  const { filteredMakanans, displayPagination } = useMemo(() => {
+    // Apply filters
+    const filtered = filterMakanans(allMakanans, {
+      search: filters.search,
+      kategori: filters.kategori,
+      tersedia: filters.tersedia,
+      sort_by: filters.sort_by,
+      sort_order: filters.sort_order
+    })
 
-  const handleCategoryFilter = (kategori: string) => {
-    onFilterChange({ kategori: kategori === 'all' ? '' : kategori, page: 1 })
-  }
+    // Apply pagination
+    const paginated = paginateResults(filtered, filters.page || 1, filters.per_page || 10)
 
-  const handleAvailabilityFilter = (tersedia: boolean | undefined) => {
-    onFilterChange({ tersedia, page: 1 })
-  }
-
-  const handleSort = (sortBy: string) => {
-    const sortOrder = filters.sort_by === sortBy && filters.sort_order === 'asc' ? 'desc' : 'asc'
-    onFilterChange({ sort_by: sortBy, sort_order: sortOrder })
-  }
+    return {
+      filteredMakanans: paginated.items,
+      displayPagination: {
+        current_page: filters.page || 1,
+        last_page: paginated.totalPages,
+        per_page: filters.per_page || 10,
+        total: paginated.total
+      }
+    }
+  }, [allMakanans, filters])
 
   const handleEdit = (makanan: Makanan) => {
     setEditingMakanan(makanan)
     setShowForm(true)
   }
 
-  const handleDelete = async (id: number, nama: string) => {
+  const handleDelete = (id: number, nama: string) => {
     setDeleteDialog({ open: true, id, nama })
   }
 
@@ -113,12 +93,26 @@ export function MakananList({
   }
 
   const handleToggleAvailability = async (id: number) => {
+    // Find the makanan to toggle
+    const makanan = allMakanans.find(m => m.id === id)
+    if (!makanan) return
+
+    // Optimistic update - toggle status instantly
+    const optimisticMakanan: Makanan = {
+      ...makanan,
+      tersedia: !makanan.tersedia,
+      updated_at: new Date().toISOString()
+    }
+    
+    dispatch(updateMakananOptimistic(optimisticMakanan))
+
     try {
       await dispatch(toggleAvailability(id)).unwrap()
       toast.success('Status ketersediaan berhasil diubah!')
     } catch (error) {
       console.error('Error toggling availability:', error)
       toast.error('Gagal mengubah status ketersediaan')
+      // Error will be handled by Redux state revert
     }
   }
 
@@ -127,272 +121,63 @@ export function MakananList({
     setEditingMakanan(null)
   }
 
-  const formatHarga = (harga: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(harga)
-  }
-
-  const getCategoryColor = (kategori: string) => {
-    switch (kategori) {
-      case 'makanan':
-        return 'bg-blue-100 text-blue-800'
-      case 'minuman':
-        return 'bg-green-100 text-green-800'
-      case 'snack':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const handleAdd = () => {
+    setEditingMakanan(null)
+    setShowForm(true)
   }
 
   return (
     <div className="space-y-6">
-      {/* Filters and Actions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter & Pencarian
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRefresh}
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Makanan
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Cari makanan..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <select
-              value={filters.kategori || 'all'}
-              onChange={(e) => handleCategoryFilter(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="all">Semua Kategori</option>
-              {categories.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-
-            {/* Availability Filter */}
-            <select
-              value={filters.tersedia === undefined ? 'all' : filters.tersedia ? 'true' : 'false'}
-              onChange={(e) => {
-                const value = e.target.value
-                handleAvailabilityFilter(value === 'all' ? undefined : value === 'true')
-              }}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="all">Semua Status</option>
-              <option value="true">Tersedia</option>
-              <option value="false">Tidak Tersedia</option>
-            </select>
-
-            {/* Sort */}
-            <select
-              value={filters.sort_by || 'created_at'}
-              onChange={(e) => handleSort(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="created_at">Tanggal Dibuat</option>
-              <option value="nama">Nama</option>
-              <option value="harga">Harga</option>
-              <option value="kategori">Kategori</option>
-              <option value="stok">Stok</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <MakananFilters
+        filters={filters}
+        categories={categories}
+        onFilterChange={onFilterChange}
+        onRefresh={onRefresh}
+        onAdd={handleAdd}
+      />
 
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Makanan ({pagination.total})</CardTitle>
+          <CardTitle>Daftar Makanan ({displayPagination.total})</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-            </div>
-          ) : makanans.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Tidak ada makanan yang ditemukan</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Gambar</TableHead>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Deskripsi</TableHead>
-                    <TableHead>Harga</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Stok</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {makanans.map((makanan) => (
-                    <TableRow key={makanan.id}>
-                      <TableCell>
-                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                          {makanan.gambar ? (
-                            <img
-                              src={makanan.gambar}
-                              alt={makanan.nama}
-                              className="w-12 h-12 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <span className="text-xs text-gray-500">No img</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{makanan.nama}</TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate">
-                          {makanan.deskripsi || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatHarga(makanan.harga)}</TableCell>
-                      <TableCell>
-                        <Badge className={getCategoryColor(makanan.kategori)}>
-                          {makanan.kategori}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{makanan.stok}</TableCell>
-                      <TableCell>
-                        <Badge variant={makanan.tersedia ? 'default' : 'secondary'}>
-                          {makanan.tersedia ? 'Tersedia' : 'Tidak Tersedia'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleAvailability(makanan.id)}
-                            className="p-2"
-                          >
-                            {makanan.tersedia ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(makanan)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(makanan.id, makanan.nama)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <MakananTable
+            makanans={filteredMakanans}
+            displayPagination={displayPagination}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleAvailability={handleToggleAvailability}
+          />
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus makanan "{deleteDialog.nama}"? Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteDialog({ open: false, id: 0, nama: '' })}>
-              Batal
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Pagination */}
-      {pagination.last_page > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Menampilkan {((pagination.current_page - 1) * pagination.per_page) + 1} hingga{' '}
-            {Math.min(pagination.current_page * pagination.per_page, pagination.total)} dari{' '}
-            {pagination.total} hasil
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.current_page - 1)}
-              disabled={pagination.current_page === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-700">
-              Halaman {pagination.current_page} dari {pagination.last_page}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.current_page + 1)}
-              disabled={pagination.current_page === pagination.last_page}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <MakananPagination
+        current_page={displayPagination.current_page}
+        last_page={displayPagination.last_page}
+        per_page={displayPagination.per_page}
+        total={displayPagination.total}
+        onPageChange={onPageChange}
+      />
 
+      {/* Delete Dialog */}
+      <MakananDeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        onConfirm={confirmDelete}
+        itemName={deleteDialog.nama}
+      />
+
+      {/* Form */}
       {showForm && (
         <MakananForm
           open={showForm}
           onClose={handleFormClose}
           editingMakanan={editingMakanan}
           categories={categories}
-          onSuccess={onRefresh} // Pass refresh callback
         />
       )}
     </div>

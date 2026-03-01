@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { createMakanan, updateMakanan } from '@/store/makananSlice'
+import { createMakanan, updateMakanan, addMakananOptimistic, updateMakananOptimistic } from '@/store/makananSlice'
 import type { Makanan, CreateMakanan, UpdateMakanan } from '@/types'
 
 interface MakananFormProps {
@@ -24,10 +24,9 @@ interface MakananFormProps {
   onClose: () => void
   editingMakanan: Makanan | null
   categories: Array<{ value: string; label: string }>
-  onSuccess?: () => void // Callback untuk refresh data
 }
 
-export function MakananForm({ open, onClose, editingMakanan, categories, onSuccess }: MakananFormProps) {
+export function MakananForm({ open, onClose, editingMakanan, categories }: MakananFormProps) {
   const dispatch = useDispatch<AppDispatch>()
   const [formData, setFormData] = useState<CreateMakanan>({
     nama: '',
@@ -39,7 +38,6 @@ export function MakananForm({ open, onClose, editingMakanan, categories, onSucce
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
-  const [loading, setLoading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
@@ -112,7 +110,12 @@ export function MakananForm({ open, onClose, editingMakanan, categories, onSucce
       return
     }
 
-    setLoading(true)
+    // Close dialog immediately
+    onClose()
+    resetForm()
+
+    // Show loading toast
+    const toastId = toast.loading(editingMakanan ? 'Memperbarui makanan...' : 'Menambahkan makanan...')
 
     try {
       const submitData: CreateMakanan | UpdateMakanan = {
@@ -125,16 +128,34 @@ export function MakananForm({ open, onClose, editingMakanan, categories, onSucce
       }
 
       if (editingMakanan) {
+        // Optimistic update for edit
+        const optimisticMakanan: Makanan = {
+          ...editingMakanan,
+          ...submitData,
+          id: editingMakanan.id,
+          created_at: editingMakanan.created_at,
+          updated_at: new Date().toISOString(),
+          gambar: imageFile ? editingMakanan.gambar : (submitData.gambar as string | undefined), // Keep existing image if no new file
+        }
+        dispatch(updateMakananOptimistic(optimisticMakanan))
+        
         await dispatch(updateMakanan({ id: editingMakanan.id, data: submitData as UpdateMakanan })).unwrap()
-        toast.success('Makanan berhasil diperbarui!')
+        toast.success('Makanan berhasil diperbarui!', { id: toastId })
       } else {
+        // Optimistic update for create
+        const optimisticMakanan: Makanan = {
+          id: Date.now(), // Temporary ID
+          ...submitData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          gambar: undefined, // No image preview for new uploads until server responds
+        } as Makanan
+        
+        dispatch(addMakananOptimistic(optimisticMakanan))
+        
         await dispatch(createMakanan(submitData as CreateMakanan)).unwrap()
-        toast.success('Makanan berhasil ditambahkan!')
+        toast.success('Makanan berhasil ditambahkan!', { id: toastId })
       }
-
-      onClose()
-      resetForm()
-      onSuccess?.() // Call refresh callback
     } catch (error: any) {
       console.error('Error saving makanan:', error)
       
@@ -143,21 +164,32 @@ export function MakananForm({ open, onClose, editingMakanan, categories, onSucce
         setValidationErrors(error.response.data.errors)
         const firstError = Object.values(error.response.data.errors)[0] as string[]
         if (firstError && firstError[0]) {
-          toast.error(firstError[0])
+          toast.error(firstError[0], { id: toastId })
+        } else {
+          toast.error('Gagal menyimpan makanan. Silakan coba lagi.', { id: toastId })
         }
       } else {
-        toast.error('Gagal menyimpan makanan. Silakan coba lagi.')
+        toast.error('Gagal menyimpan makanan. Silakan coba lagi.', { id: toastId })
       }
-    } finally {
-      setLoading(false)
+      
+      // Reopen form on error so user can fix it
+      // Restore form data for retry
+      setFormData({
+        nama: formData.nama,
+        deskripsi: formData.deskripsi,
+        harga: formData.harga,
+        kategori: formData.kategori,
+        tersedia: formData.tersedia,
+        stok: formData.stok,
+      })
+      setImageFile(imageFile)
+      onClose() // This will reopen the form with restored data
     }
   }
 
   const handleClose = () => {
-    if (!loading) {
-      onClose()
-      resetForm()
-    }
+    onClose()
+    resetForm()
   }
 
   return (
@@ -318,15 +350,13 @@ export function MakananForm({ open, onClose, editingMakanan, categories, onSucce
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={loading}
             >
               Batal
             </Button>
             <Button
               type="submit"
-              disabled={loading}
             >
-              {loading ? 'Menyimpan...' : (editingMakanan ? 'Update' : 'Simpan')}
+              {editingMakanan ? 'Update' : 'Simpan'}
             </Button>
           </DialogFooter>
         </form>
