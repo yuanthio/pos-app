@@ -38,7 +38,8 @@ export const fetchKasirOrders = createAsyncThunk<
   }
   
   try {
-    const response = await api.get<KasirOrdersResponse>('/kasir/orders');
+    // Use endpoint with eager loading to avoid N+1 queries
+    const response = await api.get<KasirOrdersResponse>('/kasir/orders?include=user,meja,detail_pesanans.makanan');
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch orders');
@@ -51,7 +52,8 @@ export const fetchKasirOrderDetails = createAsyncThunk<
   { rejectValue: string }
 >('kasir/fetchOrderDetails', async (orderId, { rejectWithValue }) => {
   try {
-    const response = await api.get<KasirOrderDetailsResponse>(`/kasir/orders/${orderId}`);
+    // Use endpoint with eager loading to avoid N+1 queries
+    const response = await api.get<KasirOrderDetailsResponse>(`/kasir/orders/${orderId}?include=user,meja,detail_pesanans.makanan`);
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
@@ -102,7 +104,8 @@ export const fetchPaymentHistory = createAsyncThunk<
   }
   
   try {
-    const response = await api.get<PaymentHistoryResponse>('/kasir/payment-history');
+    // Use endpoint with eager loading to avoid N+1 queries
+    const response = await api.get<PaymentHistoryResponse>('/kasir/payment-history?include=user,meja');
     return response.data.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch payment history');
