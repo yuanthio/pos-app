@@ -13,6 +13,7 @@ import PaymentHistoryViewToggle from './PaymentHistoryViewToggle';
 import PaymentHistoryListView from './PaymentHistoryListView';
 import PaymentHistoryGridView from './PaymentHistoryGridView';
 import PaymentHistoryPagination from './PaymentHistoryPagination';
+import PaymentHistoryFilters from './PaymentHistoryFilters';
 
 interface PaymentHistoryProps {
   onViewDetail?: (order: Pesanan) => void;
@@ -26,16 +27,28 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onViewDetail }) => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     dispatch(fetchPaymentHistory());
   }, [dispatch]);
 
+  // Filter payment history client-side
+  const filteredPaymentHistory = paymentHistory.filter(order => {
+    const matchesSearch = !searchTerm || 
+      order.nama_pelanggan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.meja?.nomor_meja?.toString().includes(searchTerm)
+    
+    return matchesSearch
+  })
+
   // Pagination logic
-  const totalPages = Math.ceil(paymentHistory.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredPaymentHistory.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = paymentHistory.slice(startIndex, endIndex);
+  const currentItems = filteredPaymentHistory.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -47,6 +60,10 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onViewDetail }) => {
 
   const handleNextPage = () => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchPaymentHistory());
   };
 
   const handleViewDetail = (order: Pesanan) => {
@@ -98,19 +115,57 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onViewDetail }) => {
 
   if (paymentHistory.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Belum ada riwayat pembayaran</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {/* Filters */}
+        <PaymentHistoryFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onRefresh={handleRefresh}
+        />
+        
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">Belum ada riwayat pembayaran</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (filteredPaymentHistory.length === 0) {
+    return (
+      <div className="space-y-4">
+        {/* Filters */}
+        <PaymentHistoryFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onRefresh={handleRefresh}
+        />
+        
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-muted-foreground">
+                Tidak ada riwayat pembayaran yang cocok dengan pencarian
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {/* Filters */}
+      <PaymentHistoryFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onRefresh={handleRefresh}
+      />
       {/* View Toggle */}
       <PaymentHistoryViewToggle
         viewMode={viewMode}
