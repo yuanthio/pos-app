@@ -14,10 +14,10 @@ export default function PelayanTabs({ activeTab, onTabChange }: PelayanTabsProps
   const unreadOrdersCount = useSelector((state: RootState) => state.meja.unreadOrdersCount)
 
   return (
-    <div className="bg-gray-50 sticky top-16 z-40">
+    <div className="sticky top-16 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Tabs className='py-3' value={activeTab} onValueChange={(value) => onTabChange(value as TabValue)}>
-          <TabsList className="grid w-full grid-cols-3 bg-gray-200">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-300">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tables">Kelola Meja</TabsTrigger>
             <TabsTrigger value="orders" className="relative">
