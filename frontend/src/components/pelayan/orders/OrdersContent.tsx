@@ -11,15 +11,29 @@ import OrdersListView from './OrdersListView'
 import OrdersGridView from './OrdersGridView'
 import OrdersPagination from './OrdersPagination'
 import DeleteOrderDialog from './DeleteOrderDialog'
+import PesananFilters from './PesananFilters'
 
 interface OrdersContentProps {
   pesanans: Pesanan[]
   loading?: boolean
+  onRefresh?: () => void
+  searchTerm?: string
+  onSearchChange?: (value: string) => void
+  statusFilter?: string
+  onStatusFilterChange?: (value: string) => void
 }
 
 const ITEMS_PER_PAGE = 5;
 
-export default function OrdersContent({ pesanans, loading = false }: OrdersContentProps) {
+export default function OrdersContent({ 
+  pesanans, 
+  loading = false, 
+  onRefresh,
+  searchTerm = '',
+  onSearchChange,
+  statusFilter = '',
+  onStatusFilterChange 
+}: OrdersContentProps) {
   const dispatch = useDispatch<AppDispatch>()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pesanan | null>(null)
@@ -74,6 +88,17 @@ export default function OrdersContent({ pesanans, loading = false }: OrdersConte
 
   return (
     <div className="space-y-6">
+      {/* Filters */}
+      {onSearchChange && onStatusFilterChange && (
+        <PesananFilters
+          searchTerm={searchTerm}
+          onSearchChange={onSearchChange}
+          statusFilter={statusFilter}
+          onStatusFilterChange={onStatusFilterChange}
+          onRefresh={onRefresh || (() => {})}
+        />
+      )}
+      
       {loading ? (
         <Card>
           <CardContent className="p-8">
