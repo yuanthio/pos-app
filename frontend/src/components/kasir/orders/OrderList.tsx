@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import OrderListViewToggle from "./OrderListViewToggle";
 import OrderListView from "./OrderListView";
 import OrderGridView from "./OrderGridView";
 import OrderListPagination from "./OrderListPagination";
+import KasirOrderFilters from "./KasirOrderFilters";
 
 interface OrderListProps {
   onSelectOrder: (order: KasirOrder) => void;
@@ -44,15 +45,27 @@ const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Use optimistic orders if available, otherwise use Redux state
   const displayOrders = optimisticOrders.length > 0 ? optimisticOrders : orders;
+  
+  // Filter orders client-side
+  const filteredOrders = displayOrders.filter(order => {
+    const matchesSearch = !searchTerm || 
+      order.nama_pelanggan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.meja?.nomor_meja?.toString().includes(searchTerm)
+    
+    return matchesSearch
+  })
 
   // Pagination logic
-  const totalPages = Math.ceil(displayOrders.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = displayOrders.slice(startIndex, endIndex);
+  const currentItems = filteredOrders.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -66,9 +79,9 @@ const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
-  useEffect(() => {
+  const handleRefresh = () => {
     dispatch(fetchKasirOrders());
-  }, [dispatch]);
+  };
 
   const handleOptimisticPayment = (order: KasirOrder) => {
     // Add to processing set
@@ -147,22 +160,41 @@ const OrderList: React.FC<OrderListProps> = ({ onSelectOrder }) => {
     );
   }
 
-  if (displayOrders.length === 0) {
+  if (filteredOrders.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <p className="text-muted-foreground">
-              Tidak ada pesanan yang perlu diproses
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {/* Filters */}
+        <KasirOrderFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onRefresh={handleRefresh}
+        />
+        
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-muted-foreground">
+                {searchTerm 
+                  ? 'Tidak ada pesanan yang cocok dengan pencarian'
+                  : 'Tidak ada pesanan yang perlu diproses'
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {/* Filters */}
+      <KasirOrderFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onRefresh={handleRefresh}
+      />
+
       {/* View Toggle */}
       <OrderListViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
 
