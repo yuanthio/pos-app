@@ -83,9 +83,9 @@ export function MakananFilters({
       {/* Filters Card */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Input */}
-            <div className="relative">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cari nama makanan..."
@@ -100,7 +100,7 @@ export function MakananFilters({
               value={filters.kategori || 'all'}
               onValueChange={handleCategoryFilter}
             >
-              <SelectTrigger className="h-10 bg-background border-input">
+              <SelectTrigger className="w-40 h-10 bg-background border-input">
                 <SelectValue placeholder="Semua Kategori" />
               </SelectTrigger>
               <SelectContent>
@@ -127,7 +127,7 @@ export function MakananFilters({
                 else handleAvailabilityFilter(value === 'tersedia')
               }}
             >
-              <SelectTrigger className="h-10 bg-background border-input">
+              <SelectTrigger className="w-40 h-10 bg-background border-input">
                 <SelectValue placeholder="Status Ketersediaan" />
               </SelectTrigger>
               <SelectContent>
@@ -157,7 +157,7 @@ export function MakananFilters({
                 value={filters.sort_by || 'nama'}
                 onValueChange={handleSort}
               >
-                <SelectTrigger className="flex-1 h-10 bg-background border-input">
+                <SelectTrigger className="w-32 h-10 bg-background border-input">
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <SelectValue placeholder="Urutkan" />
