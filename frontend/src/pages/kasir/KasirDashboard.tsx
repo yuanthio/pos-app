@@ -52,14 +52,10 @@ export default function KasirDashboard() {
 
   // Fetch data on component mount only
   useEffect(() => {
-    // Initial fetch only if no data exists
-    if (orders.length === 0) {
-      dispatch(fetchKasirOrders());
-    }
-    if (paymentHistory.length === 0) {
-      dispatch(fetchPaymentHistory());
-    }
-  }, [dispatch, orders.length, paymentHistory.length]);
+    // Initial fetch only once on mount
+    dispatch(fetchKasirOrders());
+    dispatch(fetchPaymentHistory());
+  }, [dispatch]);
 
   const handleLogout = async () => {
   // Simple logout - redirect to login

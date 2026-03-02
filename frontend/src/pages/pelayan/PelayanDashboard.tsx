@@ -23,6 +23,21 @@ export default function PelayanDashboard() {
   const pesananState = useSelector((state: RootState) => state.pesanan)
   const { orders, loading } = pesananState
   
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  
+  // Filter orders client-side
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = !searchTerm || 
+      order.nama_pelanggan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.meja?.nomor_meja?.toString().includes(searchTerm)
+    
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
+  
   // Set active tab based on URL parameter, default to 'overview'
   const [activeTab, setActiveTab] = useState<'overview' | 'tables' | 'orders'>(
     urlTab as 'overview' | 'tables' | 'orders' || 'overview'
@@ -70,6 +85,10 @@ export default function PelayanDashboard() {
     }
   }
 
+  const handleRefresh = () => {
+    dispatch(fetchOrders())
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -95,7 +114,15 @@ export default function PelayanDashboard() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <OrdersContent pesanans={orders} loading={loading} />
+            <OrdersContent 
+              pesanans={filteredOrders} 
+              loading={loading}
+              onRefresh={handleRefresh}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+            />
           </TabsContent>
         </Tabs>
       </main>
