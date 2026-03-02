@@ -26,6 +26,9 @@ interface MakananListProps {
   onFilterChange: (filters: Partial<MakananParams>) => void
   onPageChange: (page: number) => void
   onRefresh: () => void
+  onEdit: (makanan: Makanan) => void
+  onDelete: (id: number) => void
+  onToggleAvailability: (id: number) => void
 }
 
 export function MakananList({ 
@@ -37,6 +40,9 @@ export function MakananList({
   onFilterChange, 
   onPageChange, 
   onRefresh,
+  onEdit,
+  onDelete,
+  onToggleAvailability
 }: MakananListProps) {
   const dispatch = useDispatch<AppDispatch>()
   const [showForm, setShowForm] = useState(false)
