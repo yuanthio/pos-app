@@ -7,6 +7,7 @@ export interface DashboardStats {
   total_admin: number
   active_users: number
   inactive_users: number
+  total_makanan: number
 }
 
 export interface RecentUser extends User {

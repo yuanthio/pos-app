@@ -107,6 +107,7 @@ export interface PesananState {
 }
 
 export interface PesananFilters {
+  search?: string
   status?: string
   meja_id?: number
   date?: string
