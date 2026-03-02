@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Makanan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,6 +31,7 @@ class AdminController extends Controller
             'total_admin' => User::where('role', 'admin')->count(),
             'active_users' => User::where('is_active', true)->count(),
             'inactive_users' => User::where('is_active', false)->count(),
+            'total_makanan' => Makanan::count(),
         ];
 
         // Get recent users

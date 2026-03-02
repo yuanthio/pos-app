@@ -25,12 +25,23 @@ class KasirController extends Controller
     /**
      * Get list of orders ready for payment
      */
-    public function getOrders(): JsonResponse
+    public function getOrders(Request $request): JsonResponse
     {
-        $orders = Pesanan::with(['meja', 'user', 'detailPesanans.makanan'])
-            ->whereIn('status', ['diproses', 'selesai'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Pesanan::with(['meja', 'user', 'detailPesanans.makanan'])
+            ->whereIn('status', ['diproses', 'selesai']);
+            
+        // Search by customer name or table number
+        if ($request->has('search') && $request->search !== '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelanggan', 'like', "%{$search}%")
+                  ->orWhereHas('meja', function ($subQuery) use ($search) {
+                      $subQuery->where('nomor_meja', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $orders = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -350,12 +361,23 @@ class KasirController extends Controller
     /**
      * Get payment history
      */
-    public function getPaymentHistory(): JsonResponse
+    public function getPaymentHistory(Request $request): JsonResponse
     {
-        $orders = Pesanan::with(['meja', 'user', 'detailPesanans.makanan'])
-            ->where('status', 'dibayar')
-            ->orderBy('updated_at', 'desc')
-            ->paginate(20);
+        $query = Pesanan::with(['meja', 'user', 'detailPesanans.makanan'])
+            ->where('status', 'dibayar');
+            
+        // Search by customer name or table number
+        if ($request->has('search') && $request->search !== '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelanggan', 'like', "%{$search}%")
+                  ->orWhereHas('meja', function ($subQuery) use ($search) {
+                      $subQuery->where('nomor_meja', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $orders = $query->orderBy('updated_at', 'desc')->paginate(20);
 
         // Calculate total with tax and service for each order
         $orders->getCollection()->transform(function ($order) {

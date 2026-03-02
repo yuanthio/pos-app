@@ -193,12 +193,30 @@ class PelayanController extends Controller
     /**
      * Get orders for pelayan
      */
-    public function getOrders(): JsonResponse
+    public function getOrders(Request $request): JsonResponse
     {
-        $user = request()->user();
-        $pesanans = Pesanan::with(['meja:id,nomor_meja,status', 'detailPesanans.makanan:id,nama,kategori,harga,tersedia'])
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
+        $user = $request->user();
+        
+        $query = Pesanan::with(['meja:id,nomor_meja,status', 'detailPesanans.makanan:id,nama,kategori,harga,tersedia'])
+            ->where('user_id', $user->id);
+            
+        // Search by customer name or table number
+        if ($request->has('search') && $request->search !== '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelanggan', 'like', "%{$search}%")
+                  ->orWhereHas('meja', function ($subQuery) use ($search) {
+                      $subQuery->where('nomor_meja', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Filter by status
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+        
+        $pesanans = $query->orderBy('created_at', 'desc')
             ->get(['id', 'meja_id', 'user_id', 'nama_pelanggan', 'status', 'total_harga', 'catatan', 'created_at', 'updated_at']);
 
         $response = response()->json([
