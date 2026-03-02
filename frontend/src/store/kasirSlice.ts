@@ -29,14 +29,7 @@ export const fetchKasirOrders = createAsyncThunk<
   KasirOrder[],
   void,
   { rejectValue: string; state: { kasir: KasirState } }
->('kasir/fetchOrders', async (_, { rejectWithValue, getState }) => {
-  const state = getState() as { kasir: KasirState }
-  
-  // Check if we already have orders
-  if (state.kasir.orders.length > 0) {
-    return state.kasir.orders
-  }
-  
+>('kasir/fetchOrders', async (_, { rejectWithValue }) => {
   try {
     // Use endpoint with eager loading to avoid N+1 queries
     const response = await api.get<KasirOrdersResponse>('/kasir/orders?include=user,meja,detail_pesanans.makanan');
