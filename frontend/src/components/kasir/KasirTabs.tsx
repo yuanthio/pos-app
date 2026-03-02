@@ -30,7 +30,7 @@ export default function KasirTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3 bg-gray-200">
+      <TabsList className="grid w-full grid-cols-3 bg-gray-300">
         <TabsTrigger value="orders" className="flex items-center gap-2">
           <List className="h-4 w-4" />
           Pesanan
